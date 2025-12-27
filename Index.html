@@ -89,6 +89,82 @@
     .dish-checkbox-row input[type="checkbox"] { width:18px; height:18px; }
     .dish-checkbox-row label { cursor:pointer; }
     ul.inline-list { margin:0; padding-left:18px; }
+
+    /* Jules Pay Styles */
+    .confirmation-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--panel);
+      border: 1px solid #243048;
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 30px rgba(2,6,23,.35);
+    }
+
+    .loading-screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--panel);
+      z-index: 2000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid var(--accent);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .success-message {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--panel);
+      z-index: 3000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .success-icon {
+      font-size: 60px;
+      color: var(--ok);
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
@@ -120,7 +196,7 @@
             <label for="customer-name">Name</label>
             <input id="customer-name" name="customer-name" placeholder="Max Mustermann" required />
             <div class="actions" style="margin-top:10px">
-              <button class="primary" type="submit">Bestellen</button>
+              <button class="primary" type="submit">Zur Kasse</button>
               <button type="reset" id="order-reset-btn">Zurücksetzen</button>
             </div>
             <div class="hint">Nach Absenden erscheint deine Bestellung im Admin-Bereich.</div>
@@ -128,6 +204,36 @@
         </div>
       </div>
     </section>
+
+    <!-- Jules Pay Confirmation Modal -->
+    <div class="confirmation-modal" id="julesPayConfirmationModal">
+      <div class="modal-content">
+        <h2>Zahlung bestätigen</h2>
+        <p>Möchtest du diese Bestellung wirklich tätigen?</p>
+        <p><strong>Bestellung:</strong> <span id="orderSummary"></span></p>
+        <p><strong>Gesamtbetrag:</strong> <span id="orderTotal"></span> €</p>
+        <div style="margin-top: 20px;">
+          <button id="julesPayConfirmYes" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; margin-right: 10px; border-radius: 4px; cursor: pointer;">Ja</button>
+          <button id="julesPayConfirmNo" style="background-color: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Nein</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jules Pay Loading Screen -->
+    <div class="loading-screen" id="julesPayLoadingScreen">
+      <div class="spinner"></div>
+      <p>Zahlung wird verarbeitet...</p>
+      <p>Daten werden übermittelt</p>
+    </div>
+
+    <!-- Jules Pay Success Message -->
+    <div class="success-message" id="julesPaySuccessMessage">
+      <div class="success-icon">✓</div>
+      <h2>Zahlung erfolgreich!</h2>
+      <p>Deine Bestellung wurde übermittelt.</p>
+      <p>(Dies ist nur eine Simulation - keine echte Zahlung wurde verarbeitet)</p>
+      <button id="julesPayContinueBtn" style="margin-top: 20px; padding: 10px 20px; border-radius: 12px; border: 1px solid #2a385a; background: #0b1220; color: var(--text); cursor: pointer;">Weiter</button>
+    </div>
 
     <!-- Admin View -->
     <section id="view-admin" class="panel" hidden>
@@ -464,13 +570,48 @@
       if(!checked.length){ alert("Bitte mindestens ein Gericht auswählen."); return; }
       const customerName = $("#customer-name").value.trim();
       if(!customerName){ alert("Bitte deinen Namen angeben."); return; }
-      const arr = getOrdersLocal();
-      const order = { id: uid(), dishes: checked.map(d=>({id:d.id,name:d.name,price:d.price||0})), customerName, status: "open", createdAt: new Date().toISOString() };
-      arr.unshift(order);
-      await updateOrders(arr, true); // save local + remote
-      e.target.reset();
+
+      // Calculate total price
+      const totalPrice = checked.reduce((sum, dish) => sum + (dish.price || 0), 0);
+
+      // Show Jules Pay confirmation modal
+      document.getElementById('orderSummary').textContent = checked.map(d => d.name).join(', ');
+      document.getElementById('orderTotal').textContent = totalPrice.toFixed(2);
+      document.getElementById('julesPayConfirmationModal').style.display = 'flex';
+    });
+
+    // Jules Pay confirmation handlers
+    document.getElementById('julesPayConfirmYes').addEventListener('click', async function() {
+      document.getElementById('julesPayConfirmationModal').style.display = 'none';
+      document.getElementById('julesPayLoadingScreen').style.display = 'flex';
+
+      // Simulate payment processing for 5 seconds
+      setTimeout(async function() {
+        // Process the order after "payment"
+        const dishesAll = getDishesLocal();
+        const checked = Array.from(document.querySelectorAll("#client-dish-picker input[type=checkbox]:checked"))
+          .map(cb => dishesAll.find(d => d.id === cb.value)).filter(Boolean);
+        const customerName = $("#customer-name").value.trim();
+
+        const arr = getOrdersLocal();
+        const order = { id: uid(), dishes: checked.map(d=>({id:d.id,name:d.name,price:d.price||0})), customerName, status: "open", createdAt: new Date().toISOString() };
+        arr.unshift(order);
+        await updateOrders(arr, true); // save local + remote
+
+        document.getElementById('julesPayLoadingScreen').style.display = 'none';
+        document.getElementById('julesPaySuccessMessage').style.display = 'flex';
+      }, 5000);
+    });
+
+    document.getElementById('julesPayConfirmNo').addEventListener('click', function() {
+      document.getElementById('julesPayConfirmationModal').style.display = 'none';
+    });
+
+    document.getElementById('julesPayContinueBtn').addEventListener('click', function() {
+      document.getElementById('julesPaySuccessMessage').style.display = 'none';
+      // Reset the form and checkboxes after successful "payment"
+      $("#order-form").reset();
       Array.from(document.querySelectorAll("#client-dish-picker input[type=checkbox]")).forEach(cb=>cb.checked=false);
-      alert("Bestellung wurde übermittelt.");
     });
 
     // render admin orders: only last 48h
