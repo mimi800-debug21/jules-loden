@@ -441,6 +441,13 @@
             <button class="warn" id="clear-done-btn" type="button">Erledigte entfernen</button>
             <button class="danger" id="clear-orders-btn" type="button">Alle Bestellungen löschen</button>
           </div>
+          <div id="payment-stats" class="panel" style="background: rgba(34,211,238, 0.1); border: 1px solid var(--accent); margin-bottom: 15px;">
+            <h3 style="color: var(--accent); margin-top: 0;">Jules Pay Zahlungsstatistik</h3>
+            <div id="payment-stats-content">Gesamtzahlungen: <span id="total-payments">0</span> | Gesamtbetrag: <span id="total-amount">0.00</span> €</div>
+          </div>
+          <div class="actions" style="margin-bottom:15px">
+            <button class="primary" id="create-wunsch-btn" type="button">Gerichter Wunsch erstellen</button>
+          </div>
           <div id="order-list" class="list"></div>
           <div class="hint">Admin aktualisiert Bestellungen automatisch (Polling). Bestellungen werden remote in JSONBin gespeichert.</div>
         </div>
@@ -866,6 +873,18 @@
       }
     });
 
+    // Calculate payment statistics for Jules Pay
+    function calculatePaymentStats() {
+      const all = getOrdersLocal();
+      const julesPayOrders = all.filter(o => o.paymentMethod === 'julespay');
+      const totalAmount = julesPayOrders.reduce((sum, order) => {
+        return sum + order.dishes.reduce((dishSum, dish) => dishSum + (dish.price || 0), 0);
+      }, 0);
+
+      document.getElementById('total-payments').textContent = julesPayOrders.length;
+      document.getElementById('total-amount').textContent = totalAmount.toFixed(2);
+    }
+
     // render admin orders: only last 48h
     function renderOrders(){
       const mount = $("#order-list"); mount.innerHTML = "";
@@ -873,6 +892,10 @@
       const now = Date.now(); const cutoff = now - 48*60*60*1000;
       const recent = all.filter(o => { try { return new Date(o.createdAt).getTime() >= cutoff; } catch(e){ return false; }});
       if(!recent.length){ mount.append(el("div",{class:"empty"},"Noch keine Bestellungen in den letzten 48 Stunden.")); return; }
+
+      // Update payment statistics
+      calculatePaymentStats();
+
       recent.forEach(o=>{
         const created = new Date(o.createdAt); const meta = `${created.toLocaleDateString()} ${created.toLocaleTimeString()}`;
         const statusLabel = o.status === "done" ? "erledigt" : (o.status === "in_progress" ? "in Arbeit" : "offen");
@@ -943,6 +966,26 @@
     $("#clear-orders-btn").addEventListener("click", async ()=>{ if(confirm("Alle Bestellungen löschen?")){ await updateOrders([], true); renderOrders(); }});
     $("#clear-done-btn").addEventListener("click", async ()=>{ const remaining = getOrdersLocal().filter(o=>o.status !== "done"); await updateOrders(remaining, true); renderOrders(); });
 
+    // Add event listener for the "Gerichter Wunsch" button
+    $("#create-wunsch-btn").addEventListener("click", async () => {
+      // Create a default "Gerichter Wunsch" order
+      const wunschOrder = {
+        id: uid(),
+        customerName: "Gerichter Wunsch",
+        dishes: [{ id: uid(), name: "Gerichter Wunsch", price: 0 }],
+        status: "open",
+        createdAt: new Date().toISOString(),
+        paymentMethod: 'julespay'
+      };
+
+      const arr = getOrdersLocal();
+      arr.unshift(wunschOrder);
+      await updateOrders(arr, true);
+      renderOrders();
+
+      alert("Gerichter Wunsch wurde erstellt und in die Bestellliste hinzugefügt.");
+    });
+
     // ---------- Polling: keep admin up-to-date, using normalization ----------
     let pollTimer = null;
     async function refreshOrdersFromRemote(){
@@ -1009,7 +1052,13 @@
       } else showClient();
     }
     function showClient(){ $("#view-client").hidden = false; $("#view-admin").hidden = true; $("#link-client").classList.add("active"); }
-    function showAdmin(){ $("#view-client").hidden = true; $("#view-admin").hidden = false; $("#link-client").classList.remove("active"); renderOrders(); }
+    function showAdmin(){
+      $("#view-client").hidden = true;
+      $("#view-admin").hidden = false;
+      $("#link-client").classList.remove("active");
+      renderOrders();
+      calculatePaymentStats(); // Ensure payment stats are updated when showing admin view
+    }
 
   </script>
 </body>
