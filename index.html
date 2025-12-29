@@ -446,7 +446,7 @@
             <div id="payment-stats-content">Gesamtzahlungen: <span id="total-payments">0</span> | Gesamtbetrag: <span id="total-amount">0.00</span> €</div>
           </div>
           <div class="actions" style="margin-bottom:15px">
-            <button class="primary" id="create-wunsch-btn" type="button">Gerichter Wunsch erstellen</button>
+            <button class="primary" id="create-wunsch-btn" type="button">Gerichter Wunsch hinzufügen</button>
           </div>
           <div id="order-list" class="list"></div>
           <div class="hint">Admin aktualisiert Bestellungen automatisch (Polling). Bestellungen werden remote in JSONBin gespeichert.</div>
@@ -968,22 +968,22 @@
 
     // Add event listener for the "Gerichter Wunsch" button
     $("#create-wunsch-btn").addEventListener("click", async () => {
-      // Create a default "Gerichter Wunsch" order
-      const wunschOrder = {
+      // Create a default "Gerichter Wunsch" dish
+      const wunschDish = {
         id: uid(),
-        customerName: "Gerichter Wunsch",
-        dishes: [{ id: uid(), name: "Gerichter Wunsch", price: 0 }],
-        status: "open",
-        createdAt: new Date().toISOString(),
-        paymentMethod: 'julespay'
+        name: "Gerichter Wunsch",
+        price: 0,
+        desc: "Spezialwunsch vom Gericht",
+        tags: "wunsch,spezial"
       };
 
-      const arr = getOrdersLocal();
-      arr.unshift(wunschOrder);
-      await updateOrders(arr, true);
-      renderOrders();
+      const arr = getDishesLocal();
+      arr.unshift(wunschDish);
+      await updateDishes(arr, true);
+      renderDishList();
+      renderClient();
 
-      alert("Gerichter Wunsch wurde erstellt und in die Bestellliste hinzugefügt.");
+      alert("Gerichter Wunsch wurde zur Gerichteliste hinzugefügt.");
     });
 
     // ---------- Polling: keep admin up-to-date, using normalization ----------
@@ -1038,6 +1038,7 @@
       renderDishList();
       renderClient();
       renderOrders();
+      calculatePaymentStats(); // Calculate payment stats after initial render
       if(REMOTE_SYNC_ORDERS) startPolling();
       if(!location.hash) location.replace("#/client");
       window.addEventListener("hashchange", onHashChange);
