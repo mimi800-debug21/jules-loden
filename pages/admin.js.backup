@@ -317,11 +317,11 @@ export default function AdminPage() {
                     <div className="order-header">
                       <strong>{order.customerName}</strong>
                       <div>
-                        <span className={`badge ${(order.status === 'done' ? 'ok' : (order.status === 'in_progress' ? 'warn' : ''))}`}>
-                          {order.status === 'done' ? 'erledigt' : (order.status === 'in_progress' ? 'in Arbeit' : 'offen')}
+                        <span className={`badge ${order.status === 'done' ? 'ok' : order.status === 'in_progress' ? 'warn' : ''}`}>
+                          {order.status === 'done' ? 'erledigt' : order.status === 'in_progress' ? 'in Arbeit' : 'offen'}
                         </span>
                         <span className="badge" style={{ marginLeft: '8px' }}>
-                          {order.paymentMethod === 'julespay' ? 'Jules Pay' : (order.paymentMethod || 'Nicht angegeben')}
+                          {order.paymentMethod === 'julespay' ? 'Jules Pay' : order.paymentMethod || 'Nicht angegeben'}
                         </span>
                       </div>
                     </div>
