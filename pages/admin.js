@@ -12,10 +12,7 @@ export default function AdminPage() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadProductsOrdersAndCategories();
-  }, []);
-
+  // Load products, orders and categories from API
   const loadProductsOrdersAndCategories = async () => {
     try {
       const [productsRes, ordersRes, categoriesRes] = await Promise.all([
@@ -58,6 +55,16 @@ export default function AdminPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadProductsOrdersAndCategories();
+
+    // Set up auto-refresh every 15 seconds for admin panel
+    const interval = setInterval(loadProductsOrdersAndCategories, 15000);
+
+    return () => clearInterval(interval);
+  }, []);
+
 
   const handleAddProduct = async (e) => {
     e.preventDefault();

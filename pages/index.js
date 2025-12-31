@@ -20,7 +20,6 @@ export default function Home() {
         </div>
         <nav>
           <Link href="/client" className="btn">Bestellen</Link>
-          <Link href="/admin" className="btn">Admin</Link>
         </nav>
       </header>
 
@@ -30,7 +29,6 @@ export default function Home() {
 
         <div className="actions">
           <Link href="/client" className="btn primary">Zum Bestellbereich</Link>
-          <Link href="/admin" className="btn">Zum Admin-Bereich</Link>
         </div>
       </main>
 

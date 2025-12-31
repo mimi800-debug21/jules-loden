@@ -28,9 +28,12 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   try {
+    // Add cache headers for better performance
+    res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=15');
+
     // Get orders with their items and product details
     const ordersResult = await client.execute(`
-      SELECT o.*, 
+      SELECT o.*,
              GROUP_CONCAT(
                json_object(
                  'id', p.id,
@@ -62,7 +65,7 @@ async function handleGet(req, res) {
           // Remove duplicates that occur due to GROUP_CONCAT
           const uniqueProducts = [];
           const seenIds = new Set();
-          
+
           for (const product of productsArray) {
             if (typeof product === 'string') {
               const parsed = JSON.parse(product);
@@ -83,7 +86,7 @@ async function handleGet(req, res) {
               seenIds.add(product.id);
             }
           }
-          
+
           order.products = uniqueProducts;
         } catch (e) {
           console.error('Error parsing products JSON:', e);
@@ -95,7 +98,7 @@ async function handleGet(req, res) {
 
       return order;
     });
-    
+
     res.status(200).json(orders);
   } catch (error) {
     console.error('Error fetching orders:', error);

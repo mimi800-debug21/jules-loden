@@ -11,15 +11,34 @@ export default function ClientPage() {
   const [showLoading, setShowLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Load products and categories from API
+  const loadProductsAndCategories = async () => {
+    try {
+      const [productsRes, categoriesRes] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/categories')
+      ]);
+
+      if (productsRes.ok && categoriesRes.ok) {
+        const productsData = await productsRes.json();
+        const categoriesData = await categoriesRes.json();
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      } else {
+        console.error('Error loading products or categories');
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  };
+
   useEffect(() => {
-    // Load products and categories from API
-    Promise.all([
-      fetch('/api/products').then(res => res.json()),
-      fetch('/api/categories').then(res => res.json())
-    ]).then(([productsData, categoriesData]) => {
-      setProducts(productsData);
-      setCategories(categoriesData);
-    });
+    loadProductsAndCategories();
+
+    // Set up auto-refresh every 30 seconds
+    const interval = setInterval(loadProductsAndCategories, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const toggleProductSelection = (productId) => {

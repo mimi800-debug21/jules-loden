@@ -28,6 +28,9 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   try {
+    // Add cache headers for better performance
+    res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=30');
+
     const result = await client.execute(`
       SELECT p.*, c.name as category_name
       FROM products p

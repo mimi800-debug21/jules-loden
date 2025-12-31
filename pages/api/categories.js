@@ -28,6 +28,9 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   try {
+    // Add cache headers for better performance
+    res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=30');
+
     const result = await client.execute('SELECT * FROM categories ORDER BY created_at DESC');
     const categories = result.rows.map(row => ({
       id: row.id,
@@ -35,7 +38,7 @@ async function handleGet(req, res) {
       description: row.description,
       createdAt: row.created_at
     }));
-    
+
     res.status(200).json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
