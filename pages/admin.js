@@ -24,15 +24,36 @@ export default function AdminPage() {
         fetch('/api/categories')
       ]);
 
-      const productsData = await productsRes.json();
-      const ordersData = await ordersRes.json();
-      const categoriesData = await categoriesRes.json();
+      // Only update state if requests were successful
+      if (productsRes.ok) {
+        const productsData = await productsRes.json();
+        setProducts(Array.isArray(productsData) ? productsData : []);
+      } else {
+        console.error('Error fetching products:', await productsRes.text());
+        setProducts([]);
+      }
 
-      setProducts(productsData);
-      setOrders(ordersData);
-      setCategories(categoriesData);
+      if (ordersRes.ok) {
+        const ordersData = await ordersRes.json();
+        setOrders(Array.isArray(ordersData) ? ordersData : []);
+      } else {
+        console.error('Error fetching orders:', await ordersRes.text());
+        setOrders([]);
+      }
+
+      if (categoriesRes.ok) {
+        const categoriesData = await categoriesRes.json();
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      } else {
+        console.error('Error fetching categories:', await categoriesRes.text());
+        setCategories([]);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
+      // Set empty arrays as fallback
+      setProducts([]);
+      setOrders([]);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -205,11 +226,11 @@ export default function AdminPage() {
   const clearDoneOrders = async () => {
     if (confirm('Sind Sie sicher, dass Sie alle erledigten Bestellungen löschen möchten?')) {
       try {
-        const doneOrders = orders.filter(order => order.status === 'done');
-        const deletePromises = doneOrders.map(order => 
+        const doneOrders = Array.isArray(orders) ? orders.filter(order => order.status === 'done') : [];
+        const deletePromises = doneOrders.map(order =>
           fetch(`/api/orders/${order.id}`, { method: 'DELETE' })
         );
-        
+
         await Promise.all(deletePromises);
         loadProductsOrdersAndCategories();
       } catch (error) {
@@ -220,11 +241,11 @@ export default function AdminPage() {
   };
 
   const calculatePaymentStats = () => {
-    const julesPayOrders = orders.filter(order => order.paymentMethod === 'julespay');
+    const julesPayOrders = Array.isArray(orders) ? orders.filter(order => order.paymentMethod === 'julespay') : [];
     const totalAmount = julesPayOrders.reduce((sum, order) => {
       return sum + (order.total || 0);
     }, 0);
-    
+
     return {
       totalPayments: julesPayOrders.length,
       totalAmount: totalAmount.toFixed(2)
