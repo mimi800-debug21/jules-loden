@@ -28,8 +28,8 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   try {
-    // Add cache headers for better performance
-    res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=15');
+    // Add cache headers for faster performance
+    res.setHeader('Cache-Control', 's-maxage=2, stale-while-revalidate=5');
 
     // Get orders with their items and product details
     const ordersResult = await client.execute(`
@@ -193,7 +193,7 @@ async function handlePut(req, res) {
     });
   } catch (error) {
     console.error('Error updating order:', error);
-    res.status(500).json({ error: 'Failed to update order' });
+    res.status(500).json({ error: error.message || 'Failed to update order' });
   }
 }
 
@@ -234,6 +234,6 @@ async function handleDelete(req, res) {
     res.status(200).json({ message: 'Order deleted successfully' });
   } catch (error) {
     console.error('Error deleting order:', error);
-    res.status(500).json({ error: 'Failed to delete order' });
+    res.status(500).json({ error: error.message || 'Failed to delete order' });
   }
 }

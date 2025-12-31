@@ -28,8 +28,8 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   try {
-    // Add cache headers for better performance
-    res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=30');
+    // Add cache headers for faster performance
+    res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=10');
 
     const result = await client.execute('SELECT * FROM categories ORDER BY created_at DESC');
     const categories = result.rows.map(row => ({
@@ -85,6 +85,16 @@ async function handlePut(req, res) {
   }
 
   try {
+    // First check if category exists
+    const existingCategory = await client.execute({
+      sql: 'SELECT * FROM categories WHERE id = ?',
+      args: [parseInt(id)]
+    });
+
+    if (existingCategory.rows.length === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
     const result = await client.execute({
       sql: 'UPDATE categories SET name = ?, description = ? WHERE id = ?',
       args: [name, description || null, parseInt(id)]
@@ -107,7 +117,7 @@ async function handlePut(req, res) {
     });
   } catch (error) {
     console.error('Error updating category:', error);
-    res.status(500).json({ error: 'Failed to update category' });
+    res.status(500).json({ error: error.message || 'Failed to update category' });
   }
 }
 
@@ -148,6 +158,6 @@ async function handleDelete(req, res) {
     res.status(200).json({ message: 'Category deleted successfully' });
   } catch (error) {
     console.error('Error deleting category:', error);
-    res.status(500).json({ error: 'Failed to delete category' });
+    res.status(500).json({ error: error.message || 'Failed to delete category' });
   }
 }

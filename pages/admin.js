@@ -59,8 +59,8 @@ export default function AdminPage() {
   useEffect(() => {
     loadProductsOrdersAndCategories();
 
-    // Set up auto-refresh every 15 seconds for admin panel
-    const interval = setInterval(loadProductsOrdersAndCategories, 15000);
+    // Set up auto-refresh every 5 seconds for admin panel
+    const interval = setInterval(loadProductsOrdersAndCategories, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -108,11 +108,13 @@ export default function AdminPage() {
         if (response.ok) {
           loadProductsOrdersAndCategories();
         } else {
-          alert('Fehler beim Löschen des Produkts');
+          const errorData = await response.json();
+          console.error('Error deleting product:', errorData);
+          alert(`Fehler beim Löschen des Produkts: ${errorData.error || 'Unbekannter Fehler'}`);
         }
       } catch (error) {
         console.error('Error deleting product:', error);
-        alert('Fehler beim Löschen des Produkts');
+        alert('Fehler beim Löschen des Produkts: Verbindung fehlgeschlagen');
       }
     }
   };
@@ -173,11 +175,13 @@ export default function AdminPage() {
         if (response.ok) {
           loadProductsOrdersAndCategories();
         } else {
-          alert('Fehler beim Löschen der Kategorie');
+          const errorData = await response.json();
+          console.error('Error deleting category:', errorData);
+          alert(`Fehler beim Löschen der Kategorie: ${errorData.error || 'Unbekannter Fehler'}`);
         }
       } catch (error) {
         console.error('Error deleting category:', error);
-        alert('Fehler beim Löschen der Kategorie');
+        alert('Fehler beim Löschen der Kategorie: Verbindung fehlgeschlagen');
       }
     }
   };
@@ -221,11 +225,13 @@ export default function AdminPage() {
         if (response.ok) {
           loadProductsOrdersAndCategories();
         } else {
-          alert('Fehler beim Löschen der Bestellung');
+          const errorData = await response.json();
+          console.error('Error deleting order:', errorData);
+          alert(`Fehler beim Löschen der Bestellung: ${errorData.error || 'Unbekannter Fehler'}`);
         }
       } catch (error) {
         console.error('Error deleting order:', error);
-        alert('Fehler beim Löschen der Bestellung');
+        alert('Fehler beim Löschen der Bestellung: Verbindung fehlgeschlagen');
       }
     }
   };
@@ -285,9 +291,15 @@ export default function AdminPage() {
       <main>
         <h1>Admin Dashboard</h1>
         
-        <div className="grid grid-2">
-          <div className="panel">
-            <h2>Eingehende Bestellungen</h2>
+        {loading ? (
+          <div className="loading-data">
+            <div className="spinner"></div>
+            <p>Daten werden geladen...</p>
+          </div>
+        ) : (
+          <div className="grid grid-2">
+            <div className="panel">
+              <h2>Eingehende Bestellungen</h2>
             
             <div className="actions" style={{ marginBottom: '8px' }}>
               <button onClick={clearDoneOrders} className="btn warn">Erledigte entfernen</button>

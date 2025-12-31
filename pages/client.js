@@ -10,33 +10,58 @@ export default function ClientPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState({});
 
-  // Load products and categories from API
+  // Load products and categories from API with optimized loading
   const loadProductsAndCategories = async () => {
+    setLoadingData(true); // Show loading indicator
+
     try {
-      const [productsRes, categoriesRes] = await Promise.all([
+      // Use Promise.allSettled to handle both requests independently
+      const [productsRes, categoriesRes] = await Promise.allSettled([
         fetch('/api/products'),
         fetch('/api/categories')
       ]);
 
-      if (productsRes.ok && categoriesRes.ok) {
-        const productsData = await productsRes.json();
-        const categoriesData = await categoriesRes.json();
+      // Process products
+      if (productsRes.status === 'fulfilled' && productsRes.value.ok) {
+        const productsData = await productsRes.value.json();
         setProducts(Array.isArray(productsData) ? productsData : []);
-        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } else {
-        console.error('Error loading products or categories');
+        console.error('Error loading products:', productsRes.reason || 'Unknown error');
+        setProducts([]);
+      }
+
+      // Process categories
+      if (categoriesRes.status === 'fulfilled' && categoriesRes.value.ok) {
+        const categoriesData = await categoriesRes.value.json();
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+
+        // Initialize expanded state for all categories to false
+        const initialExpandedState = {};
+        categoriesData.forEach(category => {
+          initialExpandedState[category.id] = false;
+        });
+        setExpandedCategories(initialExpandedState);
+      } else {
+        console.error('Error loading categories:', categoriesRes.reason || 'Unknown error');
+        setCategories([]);
       }
     } catch (error) {
       console.error('Error loading data:', error);
+      setProducts([]);
+      setCategories([]);
+    } finally {
+      setLoadingData(false); // Hide loading indicator
     }
   };
 
   useEffect(() => {
     loadProductsAndCategories();
 
-    // Set up auto-refresh every 30 seconds
-    const interval = setInterval(loadProductsAndCategories, 30000);
+    // Set up auto-refresh every 5 minutes (300000 milliseconds)
+    const interval = setInterval(loadProductsAndCategories, 300000);
 
     return () => clearInterval(interval);
   }, []);
@@ -49,6 +74,13 @@ export default function ClientPage() {
         return [...prev, productId];
       }
     });
+  };
+
+  const toggleCategory = (categoryId) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
   };
 
   const handleOrderSubmit = (e) => {
@@ -121,11 +153,16 @@ export default function ClientPage() {
   // Group products by category
   const productsByCategory = {};
   products.forEach(product => {
+    const categoryId = product.categoryId;
     const categoryName = product.categoryName || 'Ohne Kategorie';
-    if (!productsByCategory[categoryName]) {
-      productsByCategory[categoryName] = [];
+
+    if (!productsByCategory[categoryId]) {
+      productsByCategory[categoryId] = {
+        name: categoryName,
+        products: []
+      };
     }
-    productsByCategory[categoryName].push(product);
+    productsByCategory[categoryId].products.push(product);
   });
 
   return (
@@ -135,7 +172,7 @@ export default function ClientPage() {
         <meta name="description" content="Bestellen Sie bei Jules Loden" />
       </Head>
 
-      <header>
+      <header className="main-header">
         <div className="brand">
           <div className="brand-badge"></div>
           <div>
@@ -150,43 +187,118 @@ export default function ClientPage() {
       </header>
 
       <main>
-        <h1>Bestellen bei Jules Loden</h1>
+        <h1 className="page-title">Bestellen bei Jules Loden</h1>
 
-        <div className="grid grid-2">
-          <div className="panel">
-            <h2>1) Produkt wählen</h2>
-            <div className="product-categories">
-              {Object.entries(productsByCategory).map(([categoryName, categoryProducts]) => (
-                <div key={categoryName} className="category-section">
-                  <h3>{categoryName}</h3>
-                  <div className="product-list">
-                    {categoryProducts.map(product => (
+        <div className="main-grid">
+          <div className="products-panel">
+            <h2 className="section-title">1) Kategorie wählen</h2>
+
+            {loadingData ? (
+              <div className="loading-data">
+                <div className="spinner"></div>
+                <p>Produkte werden geladen...</p>
+              </div>
+            ) : (
+              <div className="categories-container">
+                {categories.map(category => {
+                  const categoryProducts = products.filter(p => p.categoryId === category.id);
+                  const isExpanded = expandedCategories[category.id] || false;
+
+                  return (
+                    <div key={category.id} className="category-card">
                       <div
-                        key={product.id}
-                        className={`product-item ${selectedProducts.includes(product.id) ? 'selected' : ''}`}
-                        onClick={() => toggleProductSelection(product.id)}
+                        className="category-header"
+                        onClick={() => toggleCategory(category.id)}
                       >
-                        <div className="product-info">
-                          <h3>{product.name}</h3>
-                          <p className="product-desc">{product.description}</p>
-                          <p className="product-price">{product.price?.toFixed(2)} €</p>
+                        <h3 className="category-name">{category.name}</h3>
+                        <div className="category-toggle">
+                          <span className={`toggle-icon ${isExpanded ? 'expanded' : ''}`}>▼</span>
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={selectedProducts.includes(product.id)}
-                          onChange={() => {}}
-                          className="product-checkbox"
-                        />
                       </div>
-                    ))}
+
+                      {isExpanded && (
+                        <div className="category-products">
+                          {categoryProducts.length > 0 ? (
+                            <div className="product-grid">
+                              {categoryProducts.map(product => (
+                                <div
+                                  key={product.id}
+                                  className={`product-card ${selectedProducts.includes(product.id) ? 'selected' : ''}`}
+                                  onClick={() => toggleProductSelection(product.id)}
+                                >
+                                  <div className="product-info">
+                                    <h4 className="product-name">{product.name}</h4>
+                                    <p className="product-desc">{product.description}</p>
+                                    <p className="product-price">{product.price?.toFixed(2)} €</p>
+                                  </div>
+                                  <div className="product-select">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedProducts.includes(product.id)}
+                                      onChange={() => {}}
+                                      className="product-checkbox"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="no-products">Keine Produkte in dieser Kategorie</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Show products without category if any exist */}
+                {products.filter(p => !p.categoryId).length > 0 && (
+                  <div className="category-card">
+                    <div
+                      className="category-header"
+                      onClick={() => toggleCategory('uncategorized')}
+                    >
+                      <h3 className="category-name">Ohne Kategorie</h3>
+                      <div className="category-toggle">
+                        <span className={`toggle-icon ${expandedCategories['uncategorized'] ? 'expanded' : ''}`}>▼</span>
+                      </div>
+                    </div>
+
+                    {expandedCategories['uncategorized'] && (
+                      <div className="category-products">
+                        <div className="product-grid">
+                          {products.filter(p => !p.categoryId).map(product => (
+                            <div
+                              key={product.id}
+                              className={`product-card ${selectedProducts.includes(product.id) ? 'selected' : ''}`}
+                              onClick={() => toggleProductSelection(product.id)}
+                            >
+                              <div className="product-info">
+                                <h4 className="product-name">{product.name}</h4>
+                                <p className="product-desc">{product.description}</p>
+                                <p className="product-price">{product.price?.toFixed(2)} €</p>
+                              </div>
+                              <div className="product-select">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedProducts.includes(product.id)}
+                                  onChange={() => {}}
+                                  className="product-checkbox"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="panel">
-            <h2>2) Bestelldetails</h2>
+          <div className="order-panel">
+            <h2 className="section-title">2) Bestelldetails</h2>
             <form onSubmit={handleOrderSubmit}>
               <div className="form-group">
                 <label htmlFor="customer-name">Ihr Name</label>
@@ -203,15 +315,15 @@ export default function ClientPage() {
               <div className="order-summary">
                 <h3>Ihre Bestellung</h3>
                 {selectedProductDetails.length > 0 ? (
-                  <ul>
+                  <ul className="order-items">
                     {selectedProductDetails.map(product => (
-                      <li key={product.id}>
+                      <li key={product.id} className="order-item">
                         {product.name} - {product.price?.toFixed(2)} €
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p>Noch keine Artikel ausgewählt</p>
+                  <p className="no-items">Noch keine Artikel ausgewählt</p>
                 )}
                 <div className="total">
                   <strong>Gesamt: {total.toFixed(2)} €</strong>

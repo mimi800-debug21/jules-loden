@@ -1,0 +1,72 @@
+[
+  {
+    "id": "q01plgw4mjr47fdr",
+    "name": "Espresso",
+    "price": 2,
+    "desc": "",
+    "tags": ""
+  },
+  {
+    "id": "i8kobovsmjq2ni3b",
+    "name": "Fußball Schokokugel",
+    "price": 1,
+    "desc": "1x",
+    "tags": ""
+  },
+  {
+    "id": "d8kverlfmjq2ni3b",
+    "name": "Mamba Set",
+    "price": 1,
+    "desc": "3 verschiedenen Sorten",
+    "tags": ""
+  },
+  {
+    "id": "ag4q4a0cmjq2ni3b",
+    "name": "Moam Cola Set",
+    "price": 1,
+    "desc": "Mini und Groß",
+    "tags": ""
+  },
+  {
+    "id": "so0dhrtsmjq2ni3b",
+    "name": "Maoam Zitrone",
+    "price": 50,
+    "desc": "1x",
+    "tags": ""
+  },
+  {
+    "id": "bcgzu6zbmjq2ni3b",
+    "name": "Mini Lind Tafel Golden",
+    "price": 0.5,
+    "desc": "1x",
+    "tags": ""
+  },
+  {
+    "id": "br0nht16mjq2ni3b",
+    "name": "Schnäpsle",
+    "price": 10,
+    "desc": "1x",
+    "tags": ""
+  },
+  {
+    "id": "xu9zs4gsmjq2ni3b",
+    "name": "Haribo Normal mini",
+    "price": 0.8,
+    "desc": "1x",
+    "tags": ""
+  },
+  {
+    "id": "d60ih8qimjq2ni3b",
+    "name": "Schoko Lolli",
+    "price": 0,
+    "desc": "1x",
+    "tags": ""
+  },
+  {
+    "id": "9c8499mhmjq2ni3b",
+    "name": "Rote Lind Kugel",
+    "price": 0.5,
+    "desc": "",
+    "tags": "1x"
+  }
+]

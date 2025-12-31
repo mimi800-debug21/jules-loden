@@ -28,8 +28,8 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   try {
-    // Add cache headers for better performance
-    res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=30');
+    // Add cache headers for faster performance
+    res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=10');
 
     const result = await client.execute(`
       SELECT p.*, c.name as category_name
@@ -100,6 +100,16 @@ async function handlePut(req, res) {
   }
 
   try {
+    // First check if product exists
+    const existingProduct = await client.execute({
+      sql: 'SELECT * FROM products WHERE id = ?',
+      args: [parseInt(id)]
+    });
+
+    if (existingProduct.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
     const result = await client.execute({
       sql: 'UPDATE products SET name = ?, price = ?, description = ?, tags = ?, category_id = ? WHERE id = ?',
       args: [name, parseFloat(price), description || null, tags || null, categoryId || null, parseInt(id)]
@@ -128,7 +138,7 @@ async function handlePut(req, res) {
     });
   } catch (error) {
     console.error('Error updating product:', error);
-    res.status(500).json({ error: 'Failed to update product' });
+    res.status(500).json({ error: error.message || 'Failed to update product' });
   }
 }
 
@@ -169,6 +179,6 @@ async function handleDelete(req, res) {
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (error) {
     console.error('Error deleting product:', error);
-    res.status(500).json({ error: 'Failed to delete product' });
+    res.status(500).json({ error: error.message || 'Failed to delete product' });
   }
 }
