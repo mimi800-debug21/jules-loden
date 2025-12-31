@@ -1,10 +1,8 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
-import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function AdminPage() {
-  const { data: session, status } = useSession();
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -15,10 +13,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (status === 'authenticated') {
-      loadProductsOrdersAndCategories();
-    }
-  }, [status]);
+    loadProductsOrdersAndCategories();
+  }, []);
 
   const loadProductsOrdersAndCategories = async () => {
     try {
@@ -41,25 +37,6 @@ export default function AdminPage() {
       setLoading(false);
     }
   };
-
-  if (status === 'loading') {
-    return <div>Loading...</div>;
-  }
-
-  if (status === 'unauthenticated') {
-    return (
-      <div className="container">
-        <Head>
-          <title>Admin - Jules Loden</title>
-        </Head>
-        <div className="panel">
-          <h1>Admin Zugang</h1>
-          <p>Sie müssen eingeloggt sein, um auf den Admin-Bereich zuzugreifen.</p>
-          <Link href="/" className="btn">Zurück zur Startseite</Link>
-        </div>
-      </div>
-    );
-  }
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -274,7 +251,6 @@ export default function AdminPage() {
         <nav>
           <Link href="/admin" className="btn active">Admin</Link>
           <Link href="/client" className="btn">Bestellen</Link>
-          <button onClick={() => signOut()} className="btn">Logout</button>
         </nav>
       </header>
 

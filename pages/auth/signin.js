@@ -1,6 +1,4 @@
-import { signIn, useSession } from 'next-auth/react';
 import { useState } from 'react';
-import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 
@@ -8,34 +6,16 @@ export default function SignIn() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const router = useRouter();
-  
-  const { data: session } = useSession();
-  
-  // If already signed in, redirect to admin
-  if (session) {
-    router.push('/admin');
-    return <div>Redirecting...</div>;
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    try {
-      const result = await signIn('credentials', {
-        username,
-        password,
-        redirect: false,
-      });
-      
-      if (result?.error) {
-        setError(result.error);
-      } else {
-        router.push('/admin');
-      }
-    } catch (error) {
-      setError('An error occurred during sign in');
-      console.error('Sign in error:', error);
+
+    // Simple validation - in a real app you'd have proper authentication
+    if (username === 'admin' && password === 'admin123') {
+      // Redirect to admin page
+      window.location.href = '/admin';
+    } else {
+      setError('Ungültige Anmeldedaten');
     }
   };
 
@@ -62,13 +42,13 @@ export default function SignIn() {
       <main>
         <div className="panel" style={{ maxWidth: '400px', margin: '50px auto' }}>
           <h2>Admin Login</h2>
-          
+
           {error && (
             <div style={{ color: 'var(--danger)', marginBottom: '15px' }}>
               {error}
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="username">Benutzername</label>
@@ -80,7 +60,7 @@ export default function SignIn() {
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="password">Passwort</label>
               <input
@@ -91,7 +71,7 @@ export default function SignIn() {
                 required
               />
             </div>
-            
+
             <div className="actions">
               <button type="submit" className="btn primary">Anmelden</button>
               <Link href="/" className="btn">Zurück</Link>

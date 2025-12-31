@@ -1,12 +1,8 @@
-import { withAuth } from 'next-auth/middleware';
-
-// Protect the admin route
-export default withAuth({
-  pages: {
-    signIn: '/auth/signin',
-  },
-});
+// No authentication required - public access to all routes
+export default function middleware() {
+  // No special handling needed
+}
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/'], // Match all routes
 };
