@@ -78,7 +78,7 @@ export default function AdminPage() {
       try {
         const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
         if (response.ok) {
-          loadProductsAndOrders();
+          loadProductsOrdersAndCategories();
         } else {
           alert('Fehler beim Löschen des Produkts');
         }
@@ -176,7 +176,7 @@ export default function AdminPage() {
       });
       
       if (response.ok) {
-        loadProductsAndOrders();
+        loadProductsOrdersAndCategories();
       } else {
         alert('Fehler beim Aktualisieren des Status');
       }
@@ -191,7 +191,7 @@ export default function AdminPage() {
       try {
         const response = await fetch(`/api/orders/${orderId}`, { method: 'DELETE' });
         if (response.ok) {
-          loadProductsAndOrders();
+          loadProductsOrdersAndCategories();
         } else {
           alert('Fehler beim Löschen der Bestellung');
         }
@@ -211,7 +211,7 @@ export default function AdminPage() {
         );
         
         await Promise.all(deletePromises);
-        loadProductsAndOrders();
+        loadProductsOrdersAndCategories();
       } catch (error) {
         console.error('Error clearing done orders:', error);
         alert('Fehler beim Löschen der erledigten Bestellungen');
