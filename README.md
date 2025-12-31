@@ -4,8 +4,8 @@ A modern e-commerce ordering system built with Next.js and Turso SQLite.
 
 ## Features
 
-- Client-facing ordering interface
-- Admin dashboard for managing products and orders
+- Client-facing ordering interface with categorized products
+- Admin dashboard for managing products, categories and orders
 - Jules Pay payment simulation
 - Secure authentication for admin access
 - Responsive design
@@ -81,6 +81,10 @@ vercel --env NEXTAUTH_SECRET=your_secret,TURSO_DATABASE_URL=your_url,TURSO_AUTH_
 - `POST /api/products` - Create a new product
 - `PUT /api/products/[id]` - Update a product
 - `DELETE /api/products/[id]` - Delete a product
+- `GET /api/categories` - Get all categories
+- `POST /api/categories` - Create a new category
+- `PUT /api/categories/[id]` - Update a category
+- `DELETE /api/categories/[id]` - Delete a category
 - `GET /api/orders` - Get all orders
 - `POST /api/orders` - Create a new order
 - `PUT /api/orders/[id]` - Update an order status

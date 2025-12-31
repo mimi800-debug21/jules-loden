@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 export default function ClientPage() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [customerName, setCustomerName] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -11,10 +12,14 @@ export default function ClientPage() {
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    // Load products from API
-    fetch('/api/products')
-      .then(res => res.json())
-      .then(data => setProducts(data));
+    // Load products and categories from API
+    Promise.all([
+      fetch('/api/products').then(res => res.json()),
+      fetch('/api/categories').then(res => res.json())
+    ]).then(([productsData, categoriesData]) => {
+      setProducts(productsData);
+      setCategories(categoriesData);
+    });
   }, []);
 
   const toggleProductSelection = (productId) => {
@@ -94,6 +99,16 @@ export default function ClientPage() {
   const selectedProductDetails = products.filter(p => selectedProducts.includes(p.id));
   const total = selectedProductDetails.reduce((sum, product) => sum + (product.price || 0), 0);
 
+  // Group products by category
+  const productsByCategory = {};
+  products.forEach(product => {
+    const categoryName = product.categoryName || 'Ohne Kategorie';
+    if (!productsByCategory[categoryName]) {
+      productsByCategory[categoryName] = [];
+    }
+    productsByCategory[categoryName].push(product);
+  });
+
   return (
     <div className="container">
       <Head>
@@ -120,31 +135,34 @@ export default function ClientPage() {
 
         <div className="grid grid-2">
           <div className="panel">
-            <h2>1) Gericht/Getränk wählen</h2>
-            <div className="product-list">
-              {products.length > 0 ? (
-                products.map(product => (
-                  <div
-                    key={product.id}
-                    className={`product-item ${selectedProducts.includes(product.id) ? 'selected' : ''}`}
-                    onClick={() => toggleProductSelection(product.id)}
-                  >
-                    <div className="product-info">
-                      <h3>{product.name}</h3>
-                      <p className="product-desc">{product.description}</p>
-                      <p className="product-price">{product.price?.toFixed(2)} €</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={selectedProducts.includes(product.id)}
-                      onChange={() => {}}
-                      className="product-checkbox"
-                    />
+            <h2>1) Produkt wählen</h2>
+            <div className="product-categories">
+              {Object.entries(productsByCategory).map(([categoryName, categoryProducts]) => (
+                <div key={categoryName} className="category-section">
+                  <h3>{categoryName}</h3>
+                  <div className="product-list">
+                    {categoryProducts.map(product => (
+                      <div
+                        key={product.id}
+                        className={`product-item ${selectedProducts.includes(product.id) ? 'selected' : ''}`}
+                        onClick={() => toggleProductSelection(product.id)}
+                      >
+                        <div className="product-info">
+                          <h3>{product.name}</h3>
+                          <p className="product-desc">{product.description}</p>
+                          <p className="product-price">{product.price?.toFixed(2)} €</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={selectedProducts.includes(product.id)}
+                          onChange={() => {}}
+                          className="product-checkbox"
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))
-              ) : (
-                <p className="empty">Keine Produkte verfügbar</p>
-              )}
+                </div>
+              ))}
             </div>
           </div>
 

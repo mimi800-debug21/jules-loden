@@ -28,16 +28,23 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   try {
-    const result = await client.execute('SELECT * FROM products ORDER BY created_at DESC');
+    const result = await client.execute(`
+      SELECT p.*, c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      ORDER BY p.created_at DESC
+    `);
     const products = result.rows.map(row => ({
       id: row.id,
       name: row.name,
       price: parseFloat(row.price),
       description: row.description,
       tags: row.tags,
+      categoryId: row.category_id,
+      categoryName: row.category_name,
       createdAt: row.created_at
     }));
-    
+
     res.status(200).json(products);
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -46,7 +53,7 @@ async function handleGet(req, res) {
 }
 
 async function handlePost(req, res) {
-  const { name, price, description, tags } = req.body;
+  const { name, price, description, tags, categoryId } = req.body;
 
   if (!name || price === undefined) {
     return res.status(400).json({ error: 'Name and price are required' });
@@ -54,14 +61,16 @@ async function handlePost(req, res) {
 
   try {
     const result = await client.execute({
-      sql: 'INSERT INTO products (name, price, description, tags) VALUES (?, ?, ?, ?)',
-      args: [name, parseFloat(price), description || null, tags || null]
+      sql: 'INSERT INTO products (name, price, description, tags, category_id) VALUES (?, ?, ?, ?, ?)',
+      args: [name, parseFloat(price), description || null, tags || null, categoryId || null]
     });
 
-    const newProduct = await client.execute({
-      sql: 'SELECT * FROM products WHERE id = ?',
-      args: [result.lastInsertRowid]
-    });
+    const newProduct = await client.execute(`
+      SELECT p.*, c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.id = ?
+    `, [result.lastInsertRowid]);
 
     res.status(201).json({
       id: newProduct.rows[0].id,
@@ -69,6 +78,8 @@ async function handlePost(req, res) {
       price: parseFloat(newProduct.rows[0].price),
       description: newProduct.rows[0].description,
       tags: newProduct.rows[0].tags,
+      categoryId: newProduct.rows[0].category_id,
+      categoryName: newProduct.rows[0].category_name,
       createdAt: newProduct.rows[0].created_at
     });
   } catch (error) {
@@ -79,7 +90,7 @@ async function handlePost(req, res) {
 
 async function handlePut(req, res) {
   const { id } = req.query;
-  const { name, price, description, tags } = req.body;
+  const { name, price, description, tags, categoryId } = req.body;
 
   if (!id) {
     return res.status(400).json({ error: 'Product ID is required' });
@@ -87,18 +98,20 @@ async function handlePut(req, res) {
 
   try {
     const result = await client.execute({
-      sql: 'UPDATE products SET name = ?, price = ?, description = ?, tags = ? WHERE id = ?',
-      args: [name, parseFloat(price), description || null, tags || null, parseInt(id)]
+      sql: 'UPDATE products SET name = ?, price = ?, description = ?, tags = ?, category_id = ? WHERE id = ?',
+      args: [name, parseFloat(price), description || null, tags || null, categoryId || null, parseInt(id)]
     });
 
     if (result.rowsAffected === 0) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const updatedProduct = await client.execute({
-      sql: 'SELECT * FROM products WHERE id = ?',
-      args: [parseInt(id)]
-    });
+    const updatedProduct = await client.execute(`
+      SELECT p.*, c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.id = ?
+    `, [parseInt(id)]);
 
     res.status(200).json({
       id: updatedProduct.rows[0].id,
@@ -106,6 +119,8 @@ async function handlePut(req, res) {
       price: parseFloat(updatedProduct.rows[0].price),
       description: updatedProduct.rows[0].description,
       tags: updatedProduct.rows[0].tags,
+      categoryId: updatedProduct.rows[0].category_id,
+      categoryName: updatedProduct.rows[0].category_name,
       createdAt: updatedProduct.rows[0].created_at
     });
   } catch (error) {

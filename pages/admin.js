@@ -7,28 +7,34 @@ export default function AdminPage() {
   const { data: session, status } = useSession();
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '', tags: '' });
+  const [categories, setCategories] = useState([]);
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '', tags: '', categoryId: '' });
+  const [newCategory, setNewCategory] = useState({ name: '', description: '' });
   const [editingProduct, setEditingProduct] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (status === 'authenticated') {
-      loadProductsAndOrders();
+      loadProductsOrdersAndCategories();
     }
   }, [status]);
 
-  const loadProductsAndOrders = async () => {
+  const loadProductsOrdersAndCategories = async () => {
     try {
-      const [productsRes, ordersRes] = await Promise.all([
+      const [productsRes, ordersRes, categoriesRes] = await Promise.all([
         fetch('/api/products'),
-        fetch('/api/orders')
+        fetch('/api/orders'),
+        fetch('/api/categories')
       ]);
 
       const productsData = await productsRes.json();
       const ordersData = await ordersRes.json();
+      const categoriesData = await categoriesRes.json();
 
       setProducts(productsData);
       setOrders(ordersData);
+      setCategories(categoriesData);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -57,14 +63,15 @@ export default function AdminPage() {
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
-    
+
     try {
       const productData = {
         ...newProduct,
-        price: parseFloat(newProduct.price) || 0
+        price: parseFloat(newProduct.price) || 0,
+        categoryId: newProduct.categoryId ? parseInt(newProduct.categoryId) : null
       };
-      
-      const response = editingProduct 
+
+      const response = editingProduct
         ? await fetch(`/api/products/${editingProduct.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -75,11 +82,11 @@ export default function AdminPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(productData)
           });
-      
+
       if (response.ok) {
-        setNewProduct({ name: '', price: '', description: '', tags: '' });
+        setNewProduct({ name: '', price: '', description: '', tags: '', categoryId: '' });
         setEditingProduct(null);
-        loadProductsAndOrders();
+        loadProductsOrdersAndCategories();
       } else {
         alert('Fehler beim Speichern des Produkts');
       }
@@ -110,14 +117,77 @@ export default function AdminPage() {
       name: product.name,
       price: product.price?.toString() || '',
       description: product.description || '',
-      tags: product.tags || ''
+      tags: product.tags || '',
+      categoryId: product.categoryId || ''
     });
     setEditingProduct(product);
   };
 
   const handleCancelEdit = () => {
-    setNewProduct({ name: '', price: '', description: '', tags: '' });
+    setNewProduct({ name: '', price: '', description: '', tags: '', categoryId: '' });
     setEditingProduct(null);
+  };
+
+  const handleAddCategory = async (e) => {
+    e.preventDefault();
+
+    try {
+      const categoryData = {
+        ...newCategory
+      };
+
+      const response = editingCategory
+        ? await fetch(`/api/categories/${editingCategory.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(categoryData)
+          })
+        : await fetch('/api/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(categoryData)
+          });
+
+      if (response.ok) {
+        setNewCategory({ name: '', description: '' });
+        setEditingCategory(null);
+        loadProductsOrdersAndCategories();
+      } else {
+        alert('Fehler beim Speichern der Kategorie');
+      }
+    } catch (error) {
+      console.error('Error saving category:', error);
+      alert('Fehler beim Speichern der Kategorie');
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    if (confirm('Sind Sie sicher, dass Sie diese Kategorie löschen möchten?')) {
+      try {
+        const response = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          loadProductsOrdersAndCategories();
+        } else {
+          alert('Fehler beim Löschen der Kategorie');
+        }
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('Fehler beim Löschen der Kategorie');
+      }
+    }
+  };
+
+  const handleEditCategory = (category) => {
+    setNewCategory({
+      name: category.name,
+      description: category.description || ''
+    });
+    setEditingCategory(category);
+  };
+
+  const handleCancelCategoryEdit = () => {
+    setNewCategory({ name: '', description: '' });
+    setEditingCategory(null);
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
@@ -295,7 +365,7 @@ export default function AdminPage() {
                   required
                 />
               </div>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="product-price">Preis (€)</label>
@@ -309,19 +379,35 @@ export default function AdminPage() {
                     min="0"
                   />
                 </div>
-                
+
                 <div className="form-group">
-                  <label htmlFor="product-tags">Tags (optional)</label>
-                  <input
-                    type="text"
-                    id="product-tags"
-                    value={newProduct.tags}
-                    onChange={(e) => setNewProduct({...newProduct, tags: e.target.value})}
-                    placeholder="vegan, scharf, ..."
-                  />
+                  <label htmlFor="product-category">Kategorie</label>
+                  <select
+                    id="product-category"
+                    value={newProduct.categoryId}
+                    onChange={(e) => setNewProduct({...newProduct, categoryId: e.target.value || ''})}
+                  >
+                    <option value="">Ohne Kategorie</option>
+                    {categories.map(category => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-              
+
+              <div className="form-group">
+                <label htmlFor="product-tags">Tags (optional)</label>
+                <input
+                  type="text"
+                  id="product-tags"
+                  value={newProduct.tags}
+                  onChange={(e) => setNewProduct({...newProduct, tags: e.target.value})}
+                  placeholder="vegan, scharf, ..."
+                />
+              </div>
+
               <div className="form-group">
                 <label htmlFor="product-description">Beschreibung (optional)</label>
                 <textarea
@@ -331,7 +417,7 @@ export default function AdminPage() {
                   placeholder="Kurzbeschreibung..."
                 ></textarea>
               </div>
-              
+
               <div className="actions">
                 <button type="submit" className="btn primary">
                   {editingProduct ? 'Produkt aktualisieren' : 'Produkt hinzufügen'}
@@ -351,6 +437,7 @@ export default function AdminPage() {
                       <strong>{product.name}</strong>
                       {product.price && <span className="badge">{product.price.toFixed(2)} €</span>}
                     </div>
+                    {product.categoryName && <div className="muted">Kategorie: {product.categoryName}</div>}
                     {product.description && <div className="muted">{product.description}</div>}
                     {product.tags && <div className="muted">Tags: {product.tags}</div>}
                     <div className="actions">
@@ -361,6 +448,63 @@ export default function AdminPage() {
                 ))
               ) : (
                 <div className="empty">Keine Produkte vorhanden</div>
+              )}
+            </div>
+          </div>
+
+          <div className="panel">
+            <h2>Kategorien verwalten</h2>
+            <form onSubmit={handleAddCategory}>
+              <div className="form-group">
+                <label htmlFor="category-name">Kategoriename</label>
+                <input
+                  type="text"
+                  id="category-name"
+                  value={newCategory.name}
+                  onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
+                  placeholder="z. B. Lebensmittel"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="category-description">Beschreibung (optional)</label>
+                <textarea
+                  id="category-description"
+                  value={newCategory.description}
+                  onChange={(e) => setNewCategory({...newCategory, description: e.target.value})}
+                  placeholder="Beschreibung der Kategorie..."
+                ></textarea>
+              </div>
+
+              <div className="actions">
+                <button type="submit" className="btn primary">
+                  {editingCategory ? 'Kategorie aktualisieren' : 'Kategorie hinzufügen'}
+                </button>
+                {editingCategory && (
+                  <button type="button" onClick={handleCancelCategoryEdit} className="btn">Abbrechen</button>
+                )}
+              </div>
+            </form>
+
+            <div className="category-list" style={{ marginTop: '20px' }}>
+              <h3>Vorhandene Kategorien</h3>
+              {categories.length > 0 ? (
+                categories.map(category => (
+                  <div key={category.id} className="category-item">
+                    <div className="category-header">
+                      <strong>{category.name}</strong>
+                    </div>
+                    {category.description && <div className="muted">{category.description}</div>}
+                    <div className="muted">Erstellt: {new Date(category.createdAt).toLocaleDateString('de-DE')}</div>
+                    <div className="actions">
+                      <button onClick={() => handleEditCategory(category)} className="btn primary">Bearbeiten</button>
+                      <button onClick={() => handleDeleteCategory(category.id)} className="btn danger">Löschen</button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty">Keine Kategorien vorhanden</div>
               )}
             </div>
           </div>

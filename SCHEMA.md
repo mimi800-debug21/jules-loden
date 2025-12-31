@@ -2,6 +2,16 @@
 
 The application uses a Turso SQLite database with the following tables:
 
+## Categories Table
+```sql
+CREATE TABLE categories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
 ## Products Table
 ```sql
 CREATE TABLE products (
@@ -10,7 +20,9 @@ CREATE TABLE products (
   price REAL NOT NULL,
   description TEXT,
   tags TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  category_id INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 ```
 
@@ -40,6 +52,7 @@ CREATE TABLE order_items (
 ```
 
 ## Relationships
+- Each product can belong to one category (many-to-one)
 - Each order can have multiple order items (one-to-many)
 - Each order item is linked to one product (many-to-one)
 - Foreign key constraints ensure referential integrity

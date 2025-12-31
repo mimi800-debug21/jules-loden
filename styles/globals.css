@@ -248,25 +248,28 @@ button:hover {
   font-size: 14px; 
 }
 
-.product-list, 
-.order-list { 
-  display: grid; 
-  gap: 12px; 
+.product-list,
+.order-list,
+.category-list {
+  display: grid;
+  gap: 12px;
 }
 
-.product-item, 
-.order-item {
-  display: grid; 
-  gap: 8px; 
-  padding: 16px; 
-  border: 1px solid #25314c; 
+.product-item,
+.order-item,
+.category-item {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid #25314c;
   border-radius: 14px;
   background: #0b1220;
   transition: var(--transition);
 }
 
 .product-item:hover,
-.order-item:hover {
+.order-item:hover,
+.category-item:hover {
   background: var(--hover-bg);
   border-color: #374151;
   transform: translateY(-2px);
@@ -329,6 +332,25 @@ button:hover {
 .inline-list { 
   margin: 0; 
   padding-left: 18px; 
+}
+
+/* Category Styles */
+.category-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #2a385a;
+}
+
+.category-section:last-child {
+  border-bottom: none;
+}
+
+.category-section h3 {
+  margin: 0 0 10px 0;
+  color: var(--accent);
+  font-size: 18px;
+  border-bottom: 1px solid #2a385a;
+  padding-bottom: 5px;
 }
 
 /* Jules Pay Styles */
