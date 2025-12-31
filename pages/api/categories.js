@@ -1,4 +1,4 @@
-import { client, initializeDb } from '../../../lib/db';
+import { client, initializeDb } from '../../lib/db';
 
 export default async function handler(req, res) {
   // Initialize database on first request

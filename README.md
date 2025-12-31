@@ -75,6 +75,9 @@ npm i -g vercel
 vercel --env NEXTAUTH_SECRET=your_secret,TURSO_DATABASE_URL=your_url,TURSO_AUTH_TOKEN=your_token,ADMIN_USERNAME=your_username,ADMIN_PASSWORD=your_password
 ```
 
+### Note about Middleware
+The application uses the deprecated middleware convention which may show a warning during deployment. This will be updated in a future version to use the new proxy pattern.
+
 ## API Routes
 
 - `GET /api/products` - Get all products
