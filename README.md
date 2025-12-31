@@ -24,8 +24,8 @@ Create a `.env.local` file in the root directory with the following variables:
 
 ```env
 # Database Configuration
-TURSO_DATABASE_URL=libsql://your-database-url.turso.io
-TURSO_AUTH_TOKEN=your_turso_auth_token_here
+TURSO_DATABASE_URL=libsql://jules-loden-mimi800-debug21.aws-ap-northeast-1.turso.io
+TURSO_AUTH_TOKEN=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NjcxODAyMTcsImlkIjoiZjEyYjU1ZTMtMzcwMC00OTc3LTlmMGUtNTAwMDk4ZDA4YWI2IiwicmlkIjoiYzM4MmZiM2UtYzVmOC00ZjNiLTlkYWYtZDA1OTBlN2Q2ZWM0In0.i6DL7P5mv8wryoHHNO-tFJE6R90OY2fcf0uEvWQ75rlH1sGEaAyPsW86BgCOojctZR1U0ry13G3Z_9hhhHFFBQ
 
 # NextAuth Configuration
 NEXTAUTH_SECRET=your_nextauth_secret_here
@@ -35,6 +35,16 @@ NEXTAUTH_URL=http://localhost:3000
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your_secure_password_here
 ```
+
+## Database Setup
+
+To initialize the database with example data, run:
+
+```bash
+npm run seed
+```
+
+This will create the necessary tables and populate them with example categories and products.
 
 ## Development
 
