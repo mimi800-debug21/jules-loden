@@ -1,8 +1,8 @@
-// No authentication required - public access to all routes
+// Public access to all routes - no authentication required
 export default function middleware() {
-  // No special handling needed
+  // Allow all requests to pass through
 }
 
 export const config = {
-  matcher: ['/'], // Match all routes
+  matcher: '/:path*', // Match all paths
 };
