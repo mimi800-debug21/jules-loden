@@ -1,1 +1,1077 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerichte – Client & Admin (Single File)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --accent: #22d3ee;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --card-bg: #1e293b;
+      --hover-bg: #2d3748;
+      --transition: all 0.3s ease;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(1200px 800px at 10% 10%, #0b1226 0, var(--bg) 60%);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 24px; }
+    header {
+      display: flex; gap: 12px; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .brand { font-weight: 700; letter-spacing: .2px; display: flex; gap: 10px; align-items: center;}
+    .brand-badge {
+      width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #22d3ee, #22c55e);
+      box-shadow: 0 0 20px rgba(34, 211, 238, .35);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(34, 211, 238, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+    }
+    nav { display: flex; gap: 8px; }
+    a.btn {
+      text-decoration: none; color: var(--text);
+      padding: 12px 18px; border-radius: 12px; background: #0b1220; border: 1px solid #1f2a44;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+    a.btn.active, a.btn:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(34,211,238,.15) inset, 0 0 15px rgba(34,211,238,.2);
+      transform: translateY(-2px);
+      background: rgba(34,211,238, 0.05);
+    }
+    .panel {
+      background: linear-gradient(180deg, var(--panel) 0, var(--panel-2) 100%);
+      border: 1px solid #243048; border-radius: 16px; padding: 24px; margin: 12px 0;
+      box-shadow: 0 10px 30px rgba(2,6,23,.35);
+      transition: var(--transition);
+    }
+    .panel:hover {
+      box-shadow: 0 15px 35px rgba(2,6,23,.4), 0 0 20px rgba(34,211,238,.1);
+    }
+    h1,h2,h3 { margin: 6px 0 16px; font-weight: 600; }
+    h1 { font-size: 28px; }
+    h2 { font-size: 22px; color: var(--accent); }
+    .grid { display: grid; gap: 18px; }
+    @media (min-width: 900px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+    label { font-size: 14px; color: var(--muted); display:block; margin-bottom:8px; font-weight: 500; }
+    input, textarea, select {
+      width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid #2a385a;
+      background: #0b1220; color: var(--text); outline: none;
+      transition: var(--transition);
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(34,211,238,.2);
+    }
+    textarea { min-height: 72px; resize: vertical; }
+    .row { display: flex; gap: 12px; }
+    .row > * { flex: 1; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      padding: 12px 18px; border-radius: 12px; border: 1px solid #2a385a;
+      background: #0b1220; color: var(--text); cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+      min-width: 120px;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    button.primary {
+      border-color: var(--accent);
+      background: rgba(34,211,238, 0.1);
+    }
+    button.primary:hover {
+      background: rgba(34,211,238, 0.2);
+    }
+    button.ok {
+      border-color: var(--ok);
+      background: rgba(34,197,94, 0.1);
+    }
+    button.ok:hover {
+      background: rgba(34,197,94, 0.2);
+    }
+    button.warn {
+      border-color: var(--warn);
+      background: rgba(245,158,11, 0.1);
+    }
+    button.warn:hover {
+      background: rgba(245,158,11, 0.2);
+    }
+    button.danger {
+      border-color: var(--danger);
+      background: rgba(239,68,68, 0.1);
+    }
+    button.danger:hover {
+      background: rgba(239,68,68, 0.2);
+    }
+    .muted { color: var(--muted); font-size: 14px; }
+    .list { display: grid; gap: 12px; }
+    .item {
+      display: grid; gap: 8px; padding: 16px; border: 1px solid #25314c; border-radius: 14px;
+      background: #0b1220;
+      transition: var(--transition);
+    }
+    .item:hover {
+      background: var(--hover-bg);
+      border-color: #374151;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .item-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .badge {
+      padding: 4px 10px; border-radius: 999px; border: 1px solid #2a385a; font-size: 12px;
+      font-weight: 500;
+    }
+    .badge.ok { border-color: var(--ok); background: rgba(34,197,94,0.1); }
+    .badge.warn { border-color: var(--warn); background: rgba(245,158,11,0.1); }
+    .badge.danger { border-color: var(--danger); background: rgba(239,68,68,0.1); }
+    .empty {
+      padding: 24px; border: 1px dashed #2a385a; border-radius: 12px; color: var(--muted);
+      text-align: center;
+      font-style: italic;
+    }
+    .footer { margin-top: 32px; color: var(--muted); font-size: 13px; text-align: center; }
+    .hint { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .dish-checkbox-row {
+      display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px;
+      background:transparent; border:1px solid transparent;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    .dish-checkbox-row:hover {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #2a385a;
+    }
+    .dish-checkbox-row input[type="checkbox"] {
+      width:20px; height:20px;
+      cursor: pointer;
+    }
+    .dish-checkbox-row label {
+      cursor:pointer;
+      flex: 1;
+      font-size: 16px;
+    }
+    ul.inline-list { margin:0; padding-left:18px; }
 
+    /* Jules Pay Styles */
+    .confirmation-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(17,24,39,0.95));
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+      background: linear-gradient(145deg, var(--panel), #1a2435);
+      border: 1px solid rgba(34,211,238, 0.3);
+      border-radius: 20px;
+      padding: 35px;
+      text-align: center;
+      max-width: 520px;
+      width: 90%;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 30px rgba(34,211,238, 0.2);
+      transform: scale(0.9);
+      animation: modalAppear 0.3s ease forwards;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(34,211,238,0.1) 0%, transparent 70%);
+      z-index: -1;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes modalAppear {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .loading-screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--bg), var(--panel));
+      z-index: 2000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid var(--accent);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .success-message {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--bg), var(--panel));
+      z-index: 3000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .success-icon {
+      font-size: 80px;
+      color: var(--ok);
+      margin-bottom: 20px;
+      animation: bounce 0.8s ease;
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+      40% {transform: translateY(-20px);}
+      60% {transform: translateY(-10px);}
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .floating {
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .dish-checkbox-row {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: slideIn 0.5s forwards;
+    }
+
+    .dish-checkbox-row:nth-child(1) { animation-delay: 0.1s; }
+    .dish-checkbox-row:nth-child(2) { animation-delay: 0.2s; }
+    .dish-checkbox-row:nth-child(3) { animation-delay: 0.3s; }
+    .dish-checkbox-row:nth-child(4) { animation-delay: 0.4s; }
+    .dish-checkbox-row:nth-child(5) { animation-delay: 0.5s; }
+    .dish-checkbox-row:nth-child(6) { animation-delay: 0.6s; }
+
+    @keyframes slideIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div style="background:linear-gradient(135deg,#22d3ee,#67e8f9);padding:15px;text-align:center;margin-bottom:24px;border-radius:12px;box-shadow:0 5px 15px rgba(34,211,238,0.3);">
+      <a href="https://www.bringlymit.de/" target="_blank" style="color:#0f172a;text-decoration:none;font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <span style="font-size:24px;">;bringlymit.de</span>
+        <span style="font-size:16px;background:#0f172a;color:#e5e7eb;padding:4px 10px;border-radius:20px;">NEU</span>
+      </a>
+      <p style="margin:8px 0 0;color:#0f172a;font-size:14px;">Die einfache Mitbring-Liste für deine nächste Party</p>
+      <p style="margin:5px 0 0;color:#0f172a;font-size:13px;font-weight:500;">Keine Anmeldung - Einfach Link teilen - Alle tragen ein, was sie mitbringen</p>
+    </div>
+    <header>
+      <div class="brand">
+        <div class="brand-badge" aria-hidden="true"></div>
+        <div>
+          <div style="font-size:14px;color:var(--muted)">Online Bestellsystem</div>
+          <div style="font-size:20px;font-weight:600">Jules Loden</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="https://www.bringlymit.de/" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500;font-size:14px;background:rgba(34,211,238,0.1);padding:8px 12px;border-radius:8px;border:1px solid var(--accent);">;bringlymit.de</a>
+        <nav>
+          <a href="#/client" id="link-client" class="btn">Bestellen</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Client View -->
+    <section id="view-client" class="panel" hidden>
+      <h1>Willkommen in Jules Loden</h1>
+      <div class="grid grid-2">
+        <div class="panel">
+          <h2>1) Gericht/Getränk wählen</h2>
+          <div id="client-dish-picker"></div>
+        </div>
+        <div class="panel">
+          <h2>2) Name</h2>
+          <form id="order-form">
+            <label for="customer-name">Name</label>
+            <input id="customer-name" name="customer-name" placeholder="Max Mustermann" required />
+            <div class="actions" style="margin-top:10px">
+              <button class="primary" type="submit">Zur Kasse</button>
+              <button type="reset" id="order-reset-btn">Zurücksetzen</button>
+            </div>
+            <div class="hint">Nach Absenden erscheint deine Bestellung im Admin-Bereich.</div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Jules Pay Confirmation Modal -->
+    <div class="confirmation-modal" id="julesPayConfirmationModal">
+      <div class="modal-content">
+        <div style="margin-bottom: 20px;">
+          <div style="font-size: 50px; margin: 0 auto 15px; width: fit-content;">💳</div>
+          <h2 style="margin: 10px 0 15px; color: var(--accent); font-size: 24px;">Zahlung bestätigen</h2>
+          <p style="margin-bottom: 20px; color: var(--muted);">Möchten Sie diese Bestellung wirklich tätigen?</p>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; margin-bottom: 20px; text-align: left;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: var(--muted);">Bestellung:</span>
+            <strong style="color: var(--text);"><span id="orderSummary"></span></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: var(--muted);">Gesamtbetrag:</span>
+            <strong style="color: var(--text); font-size: 18px;"><span id="orderTotal"></span> €</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: var(--muted);">Name:</span>
+            <strong style="color: var(--text);"><span id="orderCustomerName"></span></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: var(--muted);">Lieferort:</span>
+            <strong style="color: var(--text);"><span id="orderDestination">Nicht angegeben</span></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--muted);">Zahlungsmethode:</span>
+            <strong style="color: var(--accent);">Jules Pay</strong>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 25px;">
+          <button id="julesPayConfirmYes" style="flex: 1; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; padding: 14px 20px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 600; transition: var(--transition); box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <span style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>✓</span> Bestellen
+            </span>
+          </button>
+          <button id="julesPayConfirmNo" style="flex: 1; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; padding: 14px 20px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 600; transition: var(--transition); box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <span style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>✕</span> Abbrechen
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jules Pay Loading Screen -->
+    <div class="loading-screen" id="julesPayLoadingScreen">
+      <div style="text-align: center;">
+        <div class="spinner" style="margin: 0 auto 20px;"></div>
+        <h2 style="font-size: 24px; margin: 10px 0; color: var(--accent);">Zahlung wird verarbeitet...</h2>
+        <p style="font-size: 16px; color: var(--muted); margin-bottom: 25px;">Ihre Bestellung wird sicher übermittelt</p>
+        <div class="progress-bar" style="width: 80%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin: 0 auto; overflow: hidden; max-width: 300px;">
+          <div class="progress" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #67e8f9); border-radius: 5px; transition: width 0.4s;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jules Pay Success Message -->
+    <div class="success-message" id="julesPaySuccessMessage">
+      <div class="success-icon">🎉</div>
+      <h2 style="font-size: 28px; margin: 15px 0 10px; color: var(--ok);">Bestellung erfolgreich aufgegeben!</h2>
+      <p style="font-size: 18px; margin: 10px 0; color: var(--text);">Ihre Bestellung wurde erfolgreich übermittelt.</p>
+      <p style="margin: 15px 0; color: var(--muted);">Sie erhalten Ihre Bestellung in Kürze an Ihrem gewünschten Lieferort.</p>
+      <div style="background: rgba(34,197,94,0.1); border: 1px solid var(--ok); border-radius: 12px; padding: 15px; margin: 15px auto; max-width: 400px;">
+        <p style="margin: 5px 0; color: var(--ok); font-weight: 500;">Jules Pay Zahlung bestätigt</p>
+        <p style="margin: 5px 0; color: var(--text); font-size: 14px;">Transaktion erfolgreich abgeschlossen</p>
+      </div>
+      <p style="margin: 15px 0; font-style: italic; color: var(--accent); font-size: 16px;">Vielen Dank für Ihre Bestellung bei Jules Loden!</p>
+      <p style="margin: 10px 0 25px; font-size: 14px; color: var(--muted);">(Dies ist nur eine Simulation - keine echte Zahlung wurde verarbeitet)</p>
+      <button id="julesPayContinueBtn" style="padding: 16px 32px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--accent), #67e8f9); color: #0f172a; cursor: pointer; font-size: 16px; font-weight: 600; transition: var(--transition); box-shadow: 0 4px 15px rgba(34,211,238,0.3);">Weiter einkaufen</button>
+    </div>
+
+    <!-- Admin View -->
+    <section id="view-admin" class="panel" hidden>
+      <h1>Admin</h1>
+      <div class="grid grid-2">
+        <div class="panel">
+          <h2>Eingehende Bestellungen (letzte 48 Stunden)</h2>
+          <div class="actions" style="margin-bottom:8px">
+            <button class="warn" id="clear-done-btn" type="button">Erledigte entfernen</button>
+            <button class="danger" id="clear-orders-btn" type="button">Alle Bestellungen löschen</button>
+          </div>
+          <div id="payment-stats" class="panel" style="background: rgba(34,211,238, 0.1); border: 1px solid var(--accent); margin-bottom: 15px;">
+            <h3 style="color: var(--accent); margin-top: 0;">Jules Pay Zahlungsstatistik</h3>
+            <div id="payment-stats-content">Gesamtzahlungen: <span id="total-payments">0</span> | Gesamtbetrag: <span id="total-amount">0.00</span> €</div>
+          </div>
+          <div class="actions" style="margin-bottom:15px">
+            <button class="primary" id="create-wunsch-btn" type="button">Gerichter Wunsch hinzufügen</button>
+          </div>
+          <div id="order-list" class="list"></div>
+          <div class="hint">Admin aktualisiert Bestellungen automatisch (Polling). Bestellungen werden remote in JSONBin gespeichert.</div>
+        </div>
+        <div class="panel">
+          <h2>Gerichte verwalten</h2>
+          <form id="dish-form">
+            <label for="dish-name">Gericht</label>
+            <input id="dish-name" placeholder="z. B. Spaghetti Bolognese" required />
+            <div class="row">
+              <div>
+                <label for="dish-price">Preis (€)</label>
+                <input id="dish-price" type="number" step="0.01" min="0" placeholder="9.90" />
+              </div>
+              <div>
+                <label for="dish-tags">Tags (optional)</label>
+                <input id="dish-tags" placeholder="vegan, scharf, ..."/>
+              </div>
+            </div>
+            <label for="dish-desc">Beschreibung (optional)</label>
+            <textarea id="dish-desc" placeholder="Kurzbeschreibung..."></textarea>
+            <div class="actions" style="margin-top:10px">
+              <button class="primary" type="submit">Gericht anlegen</button>
+              <button type="button" id="seed-btn">Demo-Daten füllen</button>
+              <button class="warn" type="button" id="clear-dishes-btn">Alle Gerichte löschen</button>
+            </div>
+          </form>
+
+          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button id="export-dishes-btn">Gerichte exportieren</button>
+            <button id="import-dishes-btn">Gerichte importieren</button>
+            <input id="import-dishes-file" type="file" accept="application/json" style="display:none" />
+            <div class="muted" style="align-self:center; font-size:13px;">Export/Import synchronisiert manuell zwischen Geräten.</div>
+          </div>
+
+          <div id="dish-list" class="list" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      © 2025 Jules Loden • Bestellsystem • Sichere Zahlung • Made with ❤️
+    </div>
+  </div>
+
+  <script>
+    // -------------------- CONFIG --------------------
+    const REMOTE_SYNC_DISHES = true;
+    const REMOTE_SYNC_ORDERS = true;
+    const JSONBIN_KEY = "$2a$10$N/2gxnECUzbO8QCffVQ7Ye6N5Oare5DGjQCPaTkkcovABoafVICSS";
+    const JSONBIN_DISHES_ID = "68a5d4feae596e708fcf10d3";
+    const JSONBIN_ORDERS_ID = "68a5e44a43b1c97be9236b9e";
+    const POLL_INTERVAL_MS = 5000;
+    // ------------------------------------------------
+
+    const $ = (s, r=document) => r.querySelector(s);
+    const el = (tag, attrs={}, ...children) => {
+      const n = document.createElement(tag);
+      for (const [k,v] of Object.entries(attrs)) {
+        if (k === "class") n.className = v;
+        else if (k.startsWith("on") && typeof v === "function") n.addEventListener(k.slice(2), v);
+        else if (v !== undefined && v !== null) n.setAttribute(k, v);
+      }
+      for (const c of children) n.append(c instanceof Node ? c : document.createTextNode(c));
+      return n;
+    };
+    const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+
+    // ---------- local storage helpers ----------
+    function getDishesLocal(){ try { return JSON.parse(localStorage.getItem("app.dishes.v1")||"[]"); } catch(e){ return []; } }
+    function setDishesLocal(a){ localStorage.setItem("app.dishes.v1", JSON.stringify(a)); }
+    function getOrdersLocal(){ try { return JSON.parse(localStorage.getItem("app.orders.v1")||"[]"); } catch(e){ return []; } }
+    function setOrdersLocal(a){ localStorage.setItem("app.orders.v1", JSON.stringify(a)); }
+
+    // ---------- JSONBin helpers ----------
+    async function fetchBinLatest(binId){
+      if(!binId) return null;
+      const url = `https://api.jsonbin.io/v3/b/${binId}/latest`;
+      const h = { "X-Master-Key": JSONBIN_KEY };
+      const res = await fetch(url, { headers: h });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      return json.record;
+    }
+    async function putBin(binId, data){
+      if(!binId) throw new Error("no bin id");
+      const url = `https://api.jsonbin.io/v3/b/${binId}`;
+      const headers = { "Content-Type":"application/json", "X-Master-Key": JSONBIN_KEY, "X-Bin-Versioning": "false" };
+      const res = await fetch(url, { method: "PUT", headers, body: JSON.stringify(data) });
+      if(!res.ok){
+        const t = await res.text().catch(()=>"");
+        throw new Error("HTTP " + res.status + " " + t);
+      }
+      return await res.json();
+    }
+
+    // ---------- Normalizer for orders (accept many shapes) ----------
+    function normalizeOrders(raw){
+      // raw can be: array, object with key orders/data/items, or single obj
+      let arr = null;
+      if(!raw) return [];
+      if(Array.isArray(raw)) arr = raw;
+      else if(typeof raw === "object"){
+        // if it directly has a list property
+        const keys = Object.keys(raw);
+        // common keys
+        if(Array.isArray(raw.orders)) arr = raw.orders;
+        else if(Array.isArray(raw.data)) arr = raw.data;
+        else if(Array.isArray(raw.items)) arr = raw.items;
+        else {
+          // find first array value
+          for(const k of keys){
+            if(Array.isArray(raw[k])){ arr = raw[k]; break; }
+          }
+        }
+        // if still null, maybe it's a single order object -> wrap
+        if(arr === null) arr = [raw];
+      } else {
+        return [];
+      }
+
+      // map each entry to canonical schema
+      const normalized = arr.map((o)=>{
+        if(!o || typeof o !== 'object') return null;
+        // possible fields for name: customerName, name, customer.name, customer
+        let customerName = o.customerName || o.name || o.customer || (o.customer && (o.customer.name||o.customer.customerName)) || "";
+        if(typeof customerName === 'object'){ // e.g. customer object
+          customerName = customerName.name || customerName.customerName || "";
+        }
+        // destination fields
+        let destination = o.destination || o.address || o.wohin || (o.customer && o.customer.address) || "";
+        if(typeof destination === 'object') destination = JSON.stringify(destination);
+        // dishes: items/products/dishes
+        let items = o.dishes || o.items || o.products || o.orderItems || [];
+        if(!Array.isArray(items)){
+          // maybe items is object with array inside
+          if(typeof items === 'object'){
+            const possible = Object.values(items).find(v=>Array.isArray(v));
+            items = possible || [];
+          } else {
+            items = [];
+          }
+        }
+        // normalize items to {name, price}
+        const normItems = items.map(it=>{
+          if(!it) return null;
+          if(typeof it === 'string') return { name: it, price: 0 };
+          if(typeof it === 'object'){
+            const name = it.name || it.title || it.item || it.product || "";
+            const price = (isFinite(Number(it.price))? Number(it.price) : (isFinite(Number(it.cost))?Number(it.cost):0));
+            return { name: name || JSON.stringify(it).slice(0,40), price };
+          }
+          return null;
+        }).filter(Boolean);
+
+        // id
+        let id = o.id || o._id || o.orderId || (o.customer && o.customer.id) || null;
+        if(!id) id = uid();
+        // status normalization
+        let status = (o.status || o.state || o.orderStatus || "open") + "";
+        status = status.toLowerCase();
+        if(status === "in_arbeit" || status === "in arbeit" || status === "inprogress" || status === "in progress" || status === "in_progress" || status === "processing") status = "in_progress";
+        else if(status === "done" || status === "erledigt" || status === "completed" || status === "finished") status = "done";
+        else status = "open";
+
+        // createdAt
+        let createdAt = o.createdAt || o.timestamp || o.time || o.created_at || o.date || new Date().toISOString();
+        try { if(typeof createdAt === 'number') createdAt = new Date(createdAt).toISOString(); else createdAt = new Date(createdAt).toISOString(); } catch(e){ createdAt = new Date().toISOString(); }
+
+        return {
+          id: String(id),
+          customerName: String(customerName || "").trim(),
+          destination: String(destination || "").trim(),  // This is preserved for backward compatibility
+          dishes: normItems,
+          status,
+          createdAt
+        };
+      }).filter(Boolean);
+
+      return normalized;
+    }
+
+    // ---------- update helpers (local + optional remote) ----------
+    async function updateDishes(arr, pushRemote = true){
+      setDishesLocal(arr);
+      if(REMOTE_SYNC_DISHES && pushRemote){
+        try{ await putBin(JSONBIN_DISHES_ID, arr); } catch(e){ console.warn("putBin dishes failed", e); alert("Warnung: Gerichte remote nicht gespeichert."); }
+      }
+    }
+    async function updateOrders(arr, pushRemote = true){
+      setOrdersLocal(arr);
+      if(REMOTE_SYNC_ORDERS && pushRemote){
+        try{ await putBin(JSONBIN_ORDERS_ID, arr); } catch(e){ console.warn("putBin orders failed", e); alert("Warnung: Bestellungen remote nicht gespeichert."); }
+      }
+    }
+
+    // ---------- rendering / UI logic (keeps layout) ----------
+    function renderClient(){
+      const mount = $("#client-dish-picker");
+      mount.innerHTML = "";
+      const dishes = getDishesLocal();
+      if(!dishes.length){ mount.append(el("div",{class:"empty"},"Noch keine Gerichte verfügbar. Bitte Admin fragen, welche anzulegen.")); return; }
+      for(const d of dishes){
+        const row = el("div",{class:"dish-checkbox-row"});
+        const cb = el("input",{type:"checkbox", value:d.id, id:"dish-"+d.id});
+        const label = el("label",{for:"dish-"+d.id}, `${d.name}${d.price?` – ${d.price.toFixed(2)} €`:""}`);
+        row.append(cb,label);
+        mount.append(row);
+        if(d.desc) mount.append(el("div",{class:"muted", style:"font-size:13px;margin-left:28px;"}, d.desc));
+      }
+      // Reapply animations after rendering
+      setTimeout(() => {
+        const dishRows = document.querySelectorAll('.dish-checkbox-row');
+        dishRows.forEach((row, index) => {
+          row.style.animationDelay = `${(index + 1) * 0.1}s`;
+        });
+      }, 10);
+    }
+
+    // dish management (same UI)
+    $("#dish-form").addEventListener("submit", async e=>{
+      e.preventDefault();
+      const name = $("#dish-name").value.trim();
+      const price = parseFloat($("#dish-price").value);
+      const desc = $("#dish-desc").value.trim();
+      const tags = $("#dish-tags").value.trim();
+      if(!name){ alert("Gerichtsname erforderlich."); return; }
+      const arr = getDishesLocal();
+      
+      // Check if we're in update mode (button text is "Gericht aktualisieren")
+      const submitButton = e.target.querySelector("button[type='submit']");
+      if(submitButton.dataset.editing === "true") {
+        // Find the dish being edited by using the stored dish ID
+        const dishId = $("#dish-form").dataset.editingDishId;
+        const existingIndex = arr.findIndex(x => x.id === dishId);
+        if(existingIndex >= 0){
+          arr[existingIndex] = { id: dishId, name, price: isFinite(price)?price:0, desc, tags };
+          // Reset editing state
+          delete e.target.dataset.editingDishId;
+          delete submitButton.dataset.editing;
+          submitButton.textContent = "Gericht anlegen";
+        }
+      } else {
+        // Normal add mode - check for existing dish by name
+        const existing = arr.findIndex(x => x.name.toLowerCase() === name.toLowerCase());
+        if(existing >= 0){
+          arr[existing] = { id: arr[existing].id || uid(), name, price: isFinite(price)?price:0, desc, tags };
+        } else {
+          arr.unshift({ id: uid(), name, price: isFinite(price)?price:0, desc, tags });
+        }
+      }
+      
+      await updateDishes(arr, true);
+      e.target.reset(); // Reset the form after successful submission
+      renderDishList();
+      renderClient();
+    });
+    $("#seed-btn").addEventListener("click", async ()=>{ const local = getDishesLocal(); if(local.length) return; const demo = [{id:uid(),name:"Margherita",price:7.5,desc:"Tomate, Mozzarella, Basilikum",tags:"vegetarisch"},{id:uid(),name:"Spaghetti Bolognese",price:9.9,desc:"Hausgemachte Soße",tags:""},{id:uid(),name:"Rotes Thai Curry",price:11.5,desc:"Mit Gemüse & Kokos",tags:"scharf,vegan"}]; await updateDishes(demo,true); renderDishList(); renderClient(); });
+    $("#clear-dishes-btn").addEventListener("click", async ()=>{ if(confirm("Alle Gerichte wirklich löschen?")){ await updateDishes([], true); renderDishList(); renderClient(); }});
+
+    function renderDishList(){
+      const mount = $("#dish-list"); mount.innerHTML = "";
+      const arr = getDishesLocal();
+      if(!arr.length){ mount.append(el("div",{class:"empty"},"Keine Gerichte vorhanden.")); return; }
+      for(const d of arr){
+        const item = el("div",{class:"item"},
+          el("div",{class:"item-header"}, el("strong",{}, d.name), el("div",{}, d.price?el("span",{class:"badge"}, `${d.price.toFixed(2)} €`):"")),
+          d.desc?el("div",{class:"muted"}, d.desc):"",
+          d.tags?el("div",{class:"muted"}, `Tags: ${d.tags}`):"",
+          el("div",{class:"actions"}, 
+            el("button",{class:"primary", onclick: async ()=>{ await editDish(d); }}, "Bearbeiten"),
+            el("button",{class:"danger", onclick: async ()=>{ await deleteDish(d.id); }}, "Löschen")
+          )
+        );
+        mount.append(item);
+      }
+    }
+    async function deleteDish(id){ const remaining = getDishesLocal().filter(d=>d.id!==id); await updateDishes(remaining,true); renderDishList(); renderClient(); }
+    
+    async function editDish(dish){
+      // Fill the dish form with the dish details
+      $("#dish-name").value = dish.name;
+      $("#dish-price").value = dish.price || "";
+      $("#dish-desc").value = dish.desc || "";
+      $("#dish-tags").value = dish.tags || "";
+      
+      // Store the dish ID in the form dataset for identification during update
+      $("#dish-form").dataset.editingDishId = dish.id;
+      
+      // Update button text to indicate it's for editing and set editing flag
+      const submitButton = $("#dish-form button[type='submit']");
+      if(submitButton) {
+        submitButton.textContent = "Gericht aktualisieren";
+        submitButton.dataset.editing = "true";
+      }
+    }
+
+    // export/import dishes (unchanged)
+    $("#export-dishes-btn").addEventListener("click", ()=>{ const data = getDishesLocal(); const blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url = URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="gerichte_export_"+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+".json"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); });
+    $("#import-dishes-btn").addEventListener("click", ()=>$("#import-dishes-file").click());
+    $("#import-dishes-file").addEventListener("change", async ev=>{
+      const f = ev.target.files && ev.target.files[0]; if(!f) return;
+      const reader = new FileReader();
+      reader.onload = async e=>{
+        try{
+          const parsed = JSON.parse(e.target.result);
+          if(!Array.isArray(parsed)){ alert("Ungültiges Format: JSON-Array erwartet."); return; }
+          if(confirm("Gerichte ersetzen? OK = ersetzen, Abbrechen = anhängen (keine Duplikate nach Name).")){
+            const normalized = parsed.map(p=>({ id: uid(), name: String(p.name||"").trim(), price: isFinite(Number(p.price))?Number(p.price):0, desc: p.desc||"", tags: p.tags||"" })).filter(Boolean);
+            await updateDishes(normalized, true);
+            alert("Gerichte ersetzt (importiert).");
+          } else {
+            const existing = getDishesLocal(); const existingNames = new Set(existing.map(d=>d.name.toLowerCase()));
+            const toAppend = [];
+            for(const p of parsed){ const name = String(p.name||"").trim(); if(!name) continue; if(existingNames.has(name.toLowerCase())) continue; toAppend.push({ id: uid(), name, price: isFinite(Number(p.price))?Number(p.price):0, desc: p.desc||"", tags: p.tags||"" }); }
+            if(toAppend.length){ await updateDishes(existing.concat(toAppend), true); alert(`Importiert und angehängt: ${toAppend.length} neue Gerichte.`); } else alert("Keine neuen Gerichte zum Anhängen gefunden.");
+          }
+          ev.target.value="";
+          renderDishList(); renderClient();
+        }catch(err){ console.error(err); alert("Fehler beim Einlesen der Datei."); }
+      };
+      reader.readAsText(f);
+    });
+
+    // ---------- Orders: create, render, set status, delete ----------
+    $("#order-form").addEventListener("submit", async e=>{
+      e.preventDefault();
+      try {
+        const dishesAll = getDishesLocal();
+        const checked = Array.from(document.querySelectorAll("#client-dish-picker input[type=checkbox]:checked"))
+          .map(cb => dishesAll.find(d => d.id === cb.value)).filter(Boolean);
+        if(!checked.length){ alert("Bitte mindestens ein Gericht auswählen."); return; }
+        const customerName = $("#customer-name").value.trim();
+        if(!customerName){ alert("Bitte deinen Namen angeben."); return; }
+
+        // Calculate total price
+        const totalPrice = checked.reduce((sum, dish) => sum + (dish.price || 0), 0);
+
+        // Show Jules Pay confirmation modal
+        document.getElementById('orderSummary').textContent = checked.map(d => d.name).join(', ');
+        document.getElementById('orderTotal').textContent = totalPrice.toFixed(2);
+        document.getElementById('orderCustomerName').textContent = customerName;
+        document.getElementById('julesPayConfirmationModal').style.display = 'flex';
+      } catch (error) {
+        console.error('Error in checkout process:', error);
+        alert('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+      }
+    });
+
+    // Jules Pay confirmation handlers
+    document.getElementById('julesPayConfirmYes').addEventListener('click', async function() {
+      try {
+        document.getElementById('julesPayConfirmationModal').style.display = 'none';
+        document.getElementById('julesPayLoadingScreen').style.display = 'flex';
+
+        // Animate progress bar
+        const progressBar = document.querySelector('.progress');
+        if (progressBar) {
+          let width = 0;
+          const interval = setInterval(() => {
+            if (width >= 100) {
+              clearInterval(interval);
+            } else {
+              width += 2;
+              progressBar.style.width = width + '%';
+            }
+          }, 100);
+        }
+
+        // Simulate payment processing for 5 seconds
+        setTimeout(async function() {
+          try {
+            // Process the order after "payment"
+            const dishesAll = getDishesLocal();
+            const checked = Array.from(document.querySelectorAll("#client-dish-picker input[type=checkbox]:checked"))
+              .map(cb => dishesAll.find(d => d.id === cb.value)).filter(Boolean);
+            const customerName = $("#customer-name").value.trim();
+
+            const arr = getOrdersLocal();
+            const order = {
+              id: uid(),
+              dishes: checked.map(d=>({id:d.id,name:d.name,price:d.price||0})),
+              customerName,
+              status: "open",
+              createdAt: new Date().toISOString(),
+              paymentMethod: 'julespay' // Only Jules Pay method
+            };
+            arr.unshift(order);
+            await updateOrders(arr, true); // save local + remote
+
+            document.getElementById('julesPayLoadingScreen').style.display = 'none';
+            document.getElementById('julesPaySuccessMessage').style.display = 'flex';
+
+            // Update success message
+            const successMessage = document.querySelector('#julesPaySuccessMessage p');
+            if (successMessage) {
+              successMessage.textContent = `Ihre Jules Pay-Zahlung wurde erfolgreich verarbeitet. Ihre Bestellung wurde übermittelt.`;
+            }
+          } catch (error) {
+            console.error('Error processing order:', error);
+            document.getElementById('julesPayLoadingScreen').style.display = 'none';
+            alert('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+          }
+        }, 5000);
+      } catch (error) {
+        console.error('Error in confirmation handler:', error);
+        document.getElementById('julesPayLoadingScreen').style.display = 'none';
+        alert('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+      }
+    });
+
+    document.getElementById('julesPayConfirmNo').addEventListener('click', function() {
+      document.getElementById('julesPayConfirmationModal').style.display = 'none';
+    });
+
+    document.getElementById('julesPayContinueBtn').addEventListener('click', function() {
+      try {
+        document.getElementById('julesPaySuccessMessage').style.display = 'none';
+        // Reset the form and checkboxes after successful "payment"
+        $("#order-form").reset();
+        Array.from(document.querySelectorAll("#client-dish-picker input[type=checkbox]")).forEach(cb=>cb.checked=false);
+      } catch (error) {
+        console.error('Error resetting form:', error);
+      }
+    });
+
+    // Calculate payment statistics for Jules Pay
+    function calculatePaymentStats() {
+      const all = getOrdersLocal();
+      const julesPayOrders = all.filter(o => o.paymentMethod === 'julespay');
+      const totalAmount = julesPayOrders.reduce((sum, order) => {
+        return sum + order.dishes.reduce((dishSum, dish) => dishSum + (dish.price || 0), 0);
+      }, 0);
+
+      document.getElementById('total-payments').textContent = julesPayOrders.length;
+      document.getElementById('total-amount').textContent = totalAmount.toFixed(2);
+    }
+
+    // render admin orders: only last 48h
+    function renderOrders(){
+      const mount = $("#order-list"); mount.innerHTML = "";
+      const all = getOrdersLocal();
+      const now = Date.now(); const cutoff = now - 48*60*60*1000;
+      const recent = all.filter(o => { try { return new Date(o.createdAt).getTime() >= cutoff; } catch(e){ return false; }});
+      if(!recent.length){ mount.append(el("div",{class:"empty"},"Noch keine Bestellungen in den letzten 48 Stunden.")); return; }
+
+      // Update payment statistics
+      calculatePaymentStats();
+
+      recent.forEach(o=>{
+        const created = new Date(o.createdAt); const meta = `${created.toLocaleDateString()} ${created.toLocaleTimeString()}`;
+        const statusLabel = o.status === "done" ? "erledigt" : (o.status === "in_progress" ? "in Arbeit" : "offen");
+        const badge = o.status === "done" ? "badge ok" : (o.status === "in_progress" ? "badge warn" : "badge");
+
+        // Determine payment method badge
+        let paymentBadge = "badge";
+        let paymentLabel = "Nicht angegeben";
+        if (o.paymentMethod) {
+          switch(o.paymentMethod) {
+            case 'paypal':
+              paymentBadge = "badge ok";
+              paymentLabel = "PayPal";
+              break;
+            case 'credit':
+              paymentBadge = "badge";
+              paymentLabel = "Kreditkarte";
+              break;
+            case 'cash':
+              paymentBadge = "badge warn";
+              paymentLabel = "Bar";
+              break;
+            case 'julespay':
+              paymentBadge = "badge";
+              paymentLabel = "Jules Pay";
+              break;
+            default:
+              paymentLabel = o.paymentMethod;
+          }
+        }
+
+        const item = el("div",{class:"item"},
+          el("div",{class:"item-header"},
+            el("strong",{}, `${o.customerName}`),
+            el("div",{},
+              el("span",{class:badge}, statusLabel),
+              " ",
+              el("span",{class:paymentBadge, style: "margin-left: 8px;"}, paymentLabel)
+            )
+          ),
+          el("div",{class:"muted"}, `Bestellt am ${meta}`),
+          (function(){ const ul = el("ul",{class:"inline-list"}); for(const d of o.dishes) ul.append(el("li",{}, `${d.name}${(typeof d.price==='number' && d.price>0)?` (${d.price.toFixed(2)} €)`:""}`)); return ul; })(),
+          el("div",{class:"actions"},
+            el("button",{class:"ok", onclick: async ()=>{ await setOrderStatus(o.id,"in_progress"); }}, "In Arbeit"),
+            el("button",{class:"warn", onclick: async ()=>{ await setOrderStatus(o.id,"done"); }}, "Abhaken (erledigt)"),
+            el("button",{class:"primary", onclick: async ()=>{ await setOrderStatus(o.id,"open"); }}, "Zurück auf 'offen'"),
+            el("button",{class:"danger", onclick: async ()=>{ if(confirm("Bestellung löschen?")) await deleteOrder(o.id); }}, "Löschen")
+          )
+        );
+        mount.append(item);
+      });
+    }
+
+    async function setOrderStatus(id, status){
+      const arr = getOrdersLocal();
+      const i = arr.findIndex(x => x.id === id);
+      if(i === -1) return;
+      arr[i].status = status;
+      await updateOrders(arr, true);
+      renderOrders();
+    }
+    async function deleteOrder(id){
+      const arr = getOrdersLocal().filter(x=>x.id!==id);
+      await updateOrders(arr, true);
+      renderOrders();
+    }
+
+    $("#clear-orders-btn").addEventListener("click", async ()=>{ if(confirm("Alle Bestellungen löschen?")){ await updateOrders([], true); renderOrders(); }});
+    $("#clear-done-btn").addEventListener("click", async ()=>{ const remaining = getOrdersLocal().filter(o=>o.status !== "done"); await updateOrders(remaining, true); renderOrders(); });
+
+    // Add event listener for the "Gerichter Wunsch" button
+    $("#create-wunsch-btn").addEventListener("click", async () => {
+      // Create a default "Gerichter Wunsch" dish
+      const wunschDish = {
+        id: uid(),
+        name: "Gerichter Wunsch",
+        price: 0,
+        desc: "Spezialwunsch vom Gericht",
+        tags: "wunsch,spezial"
+      };
+
+      const arr = getDishesLocal();
+      arr.unshift(wunschDish);
+      await updateDishes(arr, true);
+      renderDishList();
+      renderClient();
+
+      alert("Gerichter Wunsch wurde zur Gerichteliste hinzugefügt.");
+    });
+
+    // ---------- Polling: keep admin up-to-date, using normalization ----------
+    let pollTimer = null;
+    async function refreshOrdersFromRemote(){
+      if(!REMOTE_SYNC_ORDERS) return;
+      try{
+        const raw = await fetchBinLatest(JSONBIN_ORDERS_ID);
+        const normalized = normalizeOrders(raw);
+        // if normalized array is non-empty, adopt it as authoritative
+        if(Array.isArray(normalized)){
+          setOrdersLocal(normalized);
+          renderOrders();
+        }
+      }catch(e){ console.warn("refreshOrdersFromRemote:", e); }
+    }
+    function startPolling(){ if(pollTimer) clearInterval(pollTimer); pollTimer = setInterval(refreshOrdersFromRemote, POLL_INTERVAL_MS); }
+
+    // ---------- Initialization ----------
+    (async function init(){
+      // try load remote dishes
+      if(REMOTE_SYNC_DISHES){
+        try{
+          const rawD = await fetchBinLatest(JSONBIN_DISHES_ID);
+          if(Array.isArray(rawD) && rawD.length) setDishesLocal(rawD);
+          else {
+            const local = getDishesLocal();
+            if(local.length) await putBin(JSONBIN_DISHES_ID, local);
+          }
+        }catch(e){ console.warn("dishes remote load failed:", e); }
+      }
+      // try load remote orders (normalize)
+      if(REMOTE_SYNC_ORDERS){
+        try{
+          const rawO = await fetchBinLatest(JSONBIN_ORDERS_ID);
+          const normalized = normalizeOrders(rawO);
+          if(Array.isArray(normalized) && normalized.length) setOrdersLocal(normalized);
+          else {
+            const local = getOrdersLocal();
+            if(local.length) await putBin(JSONBIN_ORDERS_ID, local);
+          }
+        }catch(e){ console.warn("orders remote load failed:", e); }
+      }
+
+      // ensure demo dishes exist
+      const localD = getDishesLocal();
+      if(!localD.length){
+        const demo = [{id:uid(),name:"Margherita",price:7.5,desc:"Tomate, Mozzarella, Basilikum",tags:"vegetarisch"},{id:uid(),name:"Spaghetti Bolognese",price:9.9,desc:"Hausgemachte Soße",tags:""},{id:uid(),name:"Rotes Thai Curry",price:11.5,desc:"Mit Gemüse & Kokos",tags:"scharf,vegan"}];
+        await updateDishes(demo, true);
+      }
+
+      renderDishList();
+      renderClient();
+      renderOrders();
+      calculatePaymentStats(); // Calculate payment stats after initial render
+      if(REMOTE_SYNC_ORDERS) startPolling();
+      if(!location.hash) location.replace("#/client");
+      window.addEventListener("hashchange", onHashChange);
+      onHashChange();
+    })();
+
+    // ---------- routing helper ----------
+    function onHashChange(){
+      const path = location.hash.replace("#","") || "/client";
+      if(path === "/admin" || path === "admin") {
+        showAdmin();
+      } else showClient();
+    }
+    function showClient(){ $("#view-client").hidden = false; $("#view-admin").hidden = true; $("#link-client").classList.add("active"); }
+    function showAdmin(){
+      $("#view-client").hidden = true;
+      $("#view-admin").hidden = false;
+      $("#link-client").classList.remove("active");
+      renderOrders();
+      calculatePaymentStats(); // Ensure payment stats are updated when showing admin view
+    }
+
+  </script>
+</body>
+</html>
