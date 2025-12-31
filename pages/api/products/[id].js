@@ -1,8 +1,10 @@
-import { client, initializeDb } from '../../lib/db';
+import { client, initializeDb } from '../../../lib/db';
 
 export default async function handler(req, res) {
+  const { id } = req.query;
+
   // Initialize database on first request
-  if (req.method === 'GET' || req.method === 'POST') {
+  if (req.method === 'GET' || req.method === 'PUT' || req.method === 'DELETE') {
     try {
       await initializeDb();
     } catch (error) {
@@ -13,18 +15,18 @@ export default async function handler(req, res) {
 
   switch (req.method) {
     case 'GET':
-      return handleGet(req, res);
-    case 'POST':
-      return handlePost(req, res);
+      return handleGet(req, res, id);
     case 'PUT':
-      return handlePut(req, res);
+      return handlePut(req, res, id);
+    case 'DELETE':
+      return handleDelete(req, res, id);
     default:
-      res.setHeader('Allow', ['GET', 'POST', 'PUT']);
+      res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
       res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
 
-async function handleGet(req, res) {
+async function handleGet(req, res, id) {
   try {
     // Add cache headers for faster performance
     res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=10');
@@ -33,9 +35,15 @@ async function handleGet(req, res) {
       SELECT p.*, c.name as category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      ORDER BY p.created_at DESC
-    `);
-    const products = result.rows.map(row => ({
+      WHERE p.id = ?
+    `, [parseInt(id)]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const row = result.rows[0];
+    const product = {
       id: row.id,
       name: row.name,
       price: parseFloat(row.price),
@@ -44,57 +52,24 @@ async function handleGet(req, res) {
       categoryId: row.category_id,
       categoryName: row.category_name,
       createdAt: row.created_at
-    }));
+    };
 
-    res.status(200).json(products);
+    res.status(200).json(product);
   } catch (error) {
-    console.error('Error fetching products:', error);
-    res.status(500).json({ error: 'Failed to fetch products' });
+    console.error('Error fetching product:', error);
+    res.status(500).json({ error: 'Failed to fetch product' });
   }
 }
 
-async function handlePost(req, res) {
-  const { name, price, description, tags, categoryId } = req.body;
-
-  if (!name || price === undefined) {
-    return res.status(400).json({ error: 'Name and price are required' });
-  }
-
-  try {
-    const result = await client.execute({
-      sql: 'INSERT INTO products (name, price, description, tags, category_id) VALUES (?, ?, ?, ?, ?)',
-      args: [name, parseFloat(price), description || null, tags || null, categoryId || null]
-    });
-
-    const newProduct = await client.execute(`
-      SELECT p.*, c.name as category_name
-      FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.id = ?
-    `, [result.lastInsertRowid]);
-
-    res.status(201).json({
-      id: newProduct.rows[0].id,
-      name: newProduct.rows[0].name,
-      price: parseFloat(newProduct.rows[0].price),
-      description: newProduct.rows[0].description,
-      tags: newProduct.rows[0].tags,
-      categoryId: newProduct.rows[0].category_id,
-      categoryName: newProduct.rows[0].category_name,
-      createdAt: newProduct.rows[0].created_at
-    });
-  } catch (error) {
-    console.error('Error creating product:', error);
-    res.status(500).json({ error: 'Failed to create product' });
-  }
-}
-
-async function handlePut(req, res) {
-  const { id } = req.query;
+async function handlePut(req, res, id) {
   const { name, price, description, tags, categoryId } = req.body;
 
   if (!id) {
     return res.status(400).json({ error: 'Product ID is required' });
+  }
+
+  if (!name || price === undefined) {
+    return res.status(400).json({ error: 'Name and price are required' });
   }
 
   try {
@@ -140,3 +115,41 @@ async function handlePut(req, res) {
   }
 }
 
+async function handleDelete(req, res, id) {
+  if (!id) {
+    return res.status(400).json({ error: 'Product ID is required' });
+  }
+
+  try {
+    // First check if product exists
+    const existingProduct = await client.execute({
+      sql: 'SELECT * FROM products WHERE id = ?',
+      args: [parseInt(id)]
+    });
+
+    if (existingProduct.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Delete related order items first (due to foreign key constraints)
+    await client.execute({
+      sql: 'DELETE FROM order_items WHERE product_id = ?',
+      args: [parseInt(id)]
+    });
+
+    // Then delete the product
+    const result = await client.execute({
+      sql: 'DELETE FROM products WHERE id = ?',
+      args: [parseInt(id)]
+    });
+
+    if (result.rowsAffected === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    res.status(200).json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    res.status(500).json({ error: error.message || 'Failed to delete product' });
+  }
+}

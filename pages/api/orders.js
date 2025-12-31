@@ -18,10 +18,8 @@ export default async function handler(req, res) {
       return handlePost(req, res);
     case 'PUT':
       return handlePut(req, res);
-    case 'DELETE':
-      return handleDelete(req, res);
     default:
-      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
+      res.setHeader('Allow', ['GET', 'POST', 'PUT']);
       res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
@@ -197,43 +195,3 @@ async function handlePut(req, res) {
   }
 }
 
-async function handleDelete(req, res) {
-  const { id } = req.query;
-
-  if (!id) {
-    return res.status(400).json({ error: 'Order ID is required' });
-  }
-
-  try {
-    // First check if order exists
-    const existingOrder = await client.execute({
-      sql: 'SELECT * FROM orders WHERE id = ?',
-      args: [parseInt(id)]
-    });
-
-    if (existingOrder.rows.length === 0) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-
-    // Delete order items first (due to foreign key constraints)
-    await client.execute({
-      sql: 'DELETE FROM order_items WHERE order_id = ?',
-      args: [parseInt(id)]
-    });
-
-    // Then delete the order
-    const result = await client.execute({
-      sql: 'DELETE FROM orders WHERE id = ?',
-      args: [parseInt(id)]
-    });
-
-    if (result.rowsAffected === 0) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-
-    res.status(200).json({ message: 'Order deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting order:', error);
-    res.status(500).json({ error: error.message || 'Failed to delete order' });
-  }
-}
