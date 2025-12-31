@@ -52,48 +52,48 @@ export default function ClientPage() {
     setShowConfirmation(false);
     setShowLoading(true);
 
-    // Simulate payment processing
-    setTimeout(async () => {
-      try {
-        // Get selected product details
-        const selectedProductDetails = products.filter(p => selectedProducts.includes(p.id));
+    try {
+      // Get selected product details
+      const selectedProductDetails = products.filter(p => selectedProducts.includes(p.id));
 
-        // Calculate total
-        const total = selectedProductDetails.reduce((sum, product) => sum + (product.price || 0), 0);
+      // Calculate total
+      const total = selectedProductDetails.reduce((sum, product) => sum + (product.price || 0), 0);
 
-        // Create order
-        const orderData = {
-          customerName,
-          products: selectedProductDetails,
-          total,
-          status: 'open',
-          paymentMethod: 'julespay'
-        };
+      // Create order
+      const orderData = {
+        customerName,
+        products: selectedProductDetails,
+        total,
+        status: 'open',
+        paymentMethod: 'julespay'
+      };
 
-        // Send order to API
-        const response = await fetch('/api/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(orderData),
-        });
+      // Send order to API
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
 
-        if (response.ok) {
-          setShowLoading(false);
-          setShowSuccess(true);
-          // Reset form
-          setSelectedProducts([]);
-          setCustomerName('');
-        } else {
-          throw new Error('Fehler beim Senden der Bestellung');
-        }
-      } catch (error) {
-        console.error('Error placing order:', error);
+      if (response.ok) {
+        setShowLoading(false);
+        setShowSuccess(true);
+        // Reset form
+        setSelectedProducts([]);
+        setCustomerName('');
+      } else {
+        const errorData = await response.json();
+        console.error('Error placing order:', errorData);
         alert('Fehler beim Senden der Bestellung. Bitte versuchen Sie es erneut.');
         setShowLoading(false);
       }
-    }, 3000);
+    } catch (error) {
+      console.error('Error placing order:', error);
+      alert('Fehler beim Senden der Bestellung. Bitte versuchen Sie es erneut.');
+      setShowLoading(false);
+    }
   };
 
   const selectedProductDetails = products.filter(p => selectedProducts.includes(p.id));

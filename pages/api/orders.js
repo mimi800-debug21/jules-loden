@@ -110,10 +110,7 @@ async function handlePost(req, res) {
     return res.status(400).json({ error: 'Customer name, products, and total are required' });
   }
 
-  // Start a transaction
   try {
-    await client.execute('BEGIN TRANSACTION');
-
     // Insert the order
     const orderResult = await client.execute({
       sql: 'INSERT INTO orders (customer_name, total, status, payment_method) VALUES (?, ?, ?, ?)',
@@ -130,8 +127,6 @@ async function handlePost(req, res) {
       });
     }
 
-    await client.execute('COMMIT');
-
     // Return the created order
     const newOrder = await client.execute({
       sql: 'SELECT * FROM orders WHERE id = ?',
@@ -147,7 +142,6 @@ async function handlePost(req, res) {
       createdAt: newOrder.rows[0].created_at
     });
   } catch (error) {
-    await client.execute('ROLLBACK');
     console.error('Error creating order:', error);
     res.status(500).json({ error: 'Failed to create order' });
   }
@@ -162,6 +156,16 @@ async function handlePut(req, res) {
   }
 
   try {
+    // First check if order exists
+    const existingOrder = await client.execute({
+      sql: 'SELECT * FROM orders WHERE id = ?',
+      args: [parseInt(id)]
+    });
+
+    if (existingOrder.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
     const result = await client.execute({
       sql: 'UPDATE orders SET status = ? WHERE id = ?',
       args: [status, parseInt(id)]
@@ -198,6 +202,23 @@ async function handleDelete(req, res) {
   }
 
   try {
+    // First check if order exists
+    const existingOrder = await client.execute({
+      sql: 'SELECT * FROM orders WHERE id = ?',
+      args: [parseInt(id)]
+    });
+
+    if (existingOrder.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Delete order items first (due to foreign key constraints)
+    await client.execute({
+      sql: 'DELETE FROM order_items WHERE order_id = ?',
+      args: [parseInt(id)]
+    });
+
+    // Then delete the order
     const result = await client.execute({
       sql: 'DELETE FROM orders WHERE id = ?',
       args: [parseInt(id)]

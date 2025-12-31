@@ -116,6 +116,23 @@ async function handleDelete(req, res) {
   }
 
   try {
+    // First check if category exists
+    const existingCategory = await client.execute({
+      sql: 'SELECT * FROM categories WHERE id = ?',
+      args: [parseInt(id)]
+    });
+
+    if (existingCategory.rows.length === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    // Set products in this category to have no category (NULL) instead of deleting them
+    await client.execute({
+      sql: 'UPDATE products SET category_id = NULL WHERE category_id = ?',
+      args: [parseInt(id)]
+    });
+
+    // Then delete the category
     const result = await client.execute({
       sql: 'DELETE FROM categories WHERE id = ?',
       args: [parseInt(id)]

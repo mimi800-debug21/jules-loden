@@ -137,6 +137,23 @@ async function handleDelete(req, res) {
   }
 
   try {
+    // First check if product exists
+    const existingProduct = await client.execute({
+      sql: 'SELECT * FROM products WHERE id = ?',
+      args: [parseInt(id)]
+    });
+
+    if (existingProduct.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Delete related order items first (due to foreign key constraints)
+    await client.execute({
+      sql: 'DELETE FROM order_items WHERE product_id = ?',
+      args: [parseInt(id)]
+    });
+
+    // Then delete the product
     const result = await client.execute({
       sql: 'DELETE FROM products WHERE id = ?',
       args: [parseInt(id)]
