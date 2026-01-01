@@ -5,8 +5,9 @@ import Link from 'next/link';
 export default function ClientPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState({});
   const [customerName, setCustomerName] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -68,12 +69,30 @@ export default function ClientPage() {
 
   const toggleProductSelection = (productId) => {
     setSelectedProducts(prev => {
-      if (prev.includes(productId)) {
-        return prev.filter(id => id !== productId);
+      if (prev[productId]) {
+        const newSelected = { ...prev };
+        delete newSelected[productId];
+        return newSelected;
       } else {
-        return [...prev, productId];
+        return { ...prev, [productId]: 1 }; // Default quantity is 1
       }
     });
+  };
+
+  const updateProductQuantity = (productId, quantity) => {
+    if (quantity < 1) {
+      // If quantity is less than 1, remove the product
+      setSelectedProducts(prev => {
+        const newSelected = { ...prev };
+        delete newSelected[productId];
+        return newSelected;
+      });
+    } else {
+      setSelectedProducts(prev => ({
+        ...prev,
+        [productId]: quantity
+      }));
+    }
   };
 
   const toggleCategory = (categoryId) => {
@@ -86,7 +105,7 @@ export default function ClientPage() {
   const handleOrderSubmit = (e) => {
     e.preventDefault();
 
-    if (selectedProducts.length === 0) {
+    if (Object.keys(selectedProducts).length === 0) {
       alert('Bitte wählen Sie mindestens ein Gericht aus.');
       return;
     }
@@ -104,16 +123,32 @@ export default function ClientPage() {
     setShowLoading(true);
 
     try {
-      // Get selected product details
-      const selectedProductDetails = products.filter(p => selectedProducts.includes(p.id));
+      // Get selected product details with quantities
+      const selectedProductDetails = [];
+      let total = 0;
 
-      // Calculate total
-      const total = selectedProductDetails.reduce((sum, product) => sum + (product.price || 0), 0);
+      for (const [productId, quantity] of Object.entries(selectedProducts)) {
+        const product = products.find(p => p.id === parseInt(productId));
+        if (product) {
+          const itemTotal = (product.price || 0) * quantity;
+          selectedProductDetails.push({
+            ...product,
+            quantity: quantity,
+            itemTotal: itemTotal
+          });
+          total += itemTotal;
+        }
+      }
 
       // Create order
       const orderData = {
         customerName,
-        products: selectedProductDetails,
+        deliveryAddress: deliveryAddress.trim() || null, // Send null if empty
+        products: selectedProductDetails.map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+          price: item.price
+        })),
         total,
         status: 'open',
         paymentMethod: 'julespay'
@@ -132,8 +167,9 @@ export default function ClientPage() {
         setShowLoading(false);
         setShowSuccess(true);
         // Reset form
-        setSelectedProducts([]);
+        setSelectedProducts({});
         setCustomerName('');
+        setDeliveryAddress('');
       } else {
         const errorData = await response.json();
         console.error('Error placing order:', errorData);
@@ -147,8 +183,22 @@ export default function ClientPage() {
     }
   };
 
-  const selectedProductDetails = products.filter(p => selectedProducts.includes(p.id));
-  const total = selectedProductDetails.reduce((sum, product) => sum + (product.price || 0), 0);
+  // Calculate selected products and total
+  const selectedProductDetails = [];
+  let total = 0;
+
+  for (const [productId, quantity] of Object.entries(selectedProducts)) {
+    const product = products.find(p => p.id === parseInt(productId));
+    if (product) {
+      const itemTotal = (product.price || 0) * quantity;
+      selectedProductDetails.push({
+        ...product,
+        quantity: quantity,
+        itemTotal: itemTotal
+      });
+      total += itemTotal;
+    }
+  }
 
   // Group products by category
   const productsByCategory = {};
@@ -231,14 +281,39 @@ export default function ClientPage() {
                                     <p className="product-desc">{product.description}</p>
                                     <p className="product-price">{product.price?.toFixed(2)} €</p>
                                   </div>
-                                  <div className="product-select">
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedProducts.includes(product.id)}
-                                      onChange={() => {}}
-                                      className="product-checkbox"
-                                    />
-                                  </div>
+                                  {selectedProducts[product.id] && (
+                                    <div className="product-quantity">
+                                      <button
+                                        className="btn"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateProductQuantity(product.id, selectedProducts[product.id] - 1);
+                                        }}
+                                      >
+                                        -
+                                      </button>
+                                      <span className="quantity">{selectedProducts[product.id]}</span>
+                                      <button
+                                        className="btn"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateProductQuantity(product.id, selectedProducts[product.id] + 1);
+                                        }}
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  )}
+                                  {!selectedProducts[product.id] && (
+                                    <div className="product-select">
+                                      <input
+                                        type="checkbox"
+                                        checked={false}
+                                        onChange={() => {}}
+                                        className="product-checkbox"
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -270,7 +345,7 @@ export default function ClientPage() {
                           {products.filter(p => !p.categoryId).map(product => (
                             <div
                               key={product.id}
-                              className={`product-card ${selectedProducts.includes(product.id) ? 'selected' : ''}`}
+                              className={`product-card ${selectedProducts[product.id] ? 'selected' : ''}`}
                               onClick={() => toggleProductSelection(product.id)}
                             >
                               <div className="product-info">
@@ -278,14 +353,39 @@ export default function ClientPage() {
                                 <p className="product-desc">{product.description}</p>
                                 <p className="product-price">{product.price?.toFixed(2)} €</p>
                               </div>
-                              <div className="product-select">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedProducts.includes(product.id)}
-                                  onChange={() => {}}
-                                  className="product-checkbox"
-                                />
-                              </div>
+                              {selectedProducts[product.id] && (
+                                <div className="product-quantity">
+                                  <button
+                                    className="btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateProductQuantity(product.id, selectedProducts[product.id] - 1);
+                                    }}
+                                  >
+                                    -
+                                  </button>
+                                  <span className="quantity">{selectedProducts[product.id]}</span>
+                                  <button
+                                    className="btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateProductQuantity(product.id, selectedProducts[product.id] + 1);
+                                    }}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              )}
+                              {!selectedProducts[product.id] && (
+                                <div className="product-select">
+                                  <input
+                                    type="checkbox"
+                                    checked={false}
+                                    onChange={() => {}}
+                                    className="product-checkbox"
+                                  />
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -312,13 +412,24 @@ export default function ClientPage() {
                 />
               </div>
 
+              <div className="form-group">
+                <label htmlFor="delivery-address">Lieferadresse (optional)</label>
+                <input
+                  type="text"
+                  id="delivery-address"
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  placeholder="Musterstraße 123, 12345 Musterstadt"
+                />
+              </div>
+
               <div className="order-summary">
                 <h3>Ihre Bestellung</h3>
                 {selectedProductDetails.length > 0 ? (
                   <ul className="order-items">
                     {selectedProductDetails.map(product => (
                       <li key={product.id} className="order-item">
-                        {product.name} - {product.price?.toFixed(2)} €
+                        {product.quantity}x {product.name} - {product.price?.toFixed(2)} € ({product.itemTotal.toFixed(2)} €)
                       </li>
                     ))}
                   </ul>
@@ -331,7 +442,7 @@ export default function ClientPage() {
               </div>
 
               <div className="actions">
-                <button type="submit" className="btn primary" disabled={selectedProducts.length === 0 || !customerName.trim()}>
+                <button type="submit" className="btn primary" disabled={Object.keys(selectedProducts).length === 0 || !customerName.trim()}>
                   Zur Kasse
                 </button>
                 <Link href="/" className="btn">Abbrechen</Link>
@@ -349,9 +460,10 @@ export default function ClientPage() {
             <p>Möchten Sie diese Bestellung wirklich tätigen?</p>
 
             <div className="order-summary">
-              <p><strong>Bestellung:</strong> {selectedProductDetails.map(p => p.name).join(', ')}</p>
+              <p><strong>Bestellung:</strong> {selectedProductDetails.map(p => `${p.quantity}x ${p.name}`).join(', ')}</p>
               <p><strong>Gesamtbetrag:</strong> {total.toFixed(2)} €</p>
               <p><strong>Name:</strong> {customerName}</p>
+              {deliveryAddress && <p><strong>Lieferadresse:</strong> {deliveryAddress}</p>}
               <p><strong>Zahlungsmethode:</strong> Jules Pay</p>
             </div>
 

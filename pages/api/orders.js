@@ -36,7 +36,8 @@ async function handleGet(req, res) {
                json_object(
                  'id', p.id,
                  'name', p.name,
-                 'price', p.price
+                 'price', p.price,
+                 'quantity', oi.quantity
                )
              ) as products_json
       FROM orders o
@@ -50,6 +51,7 @@ async function handleGet(req, res) {
       const order = {
         id: row.id,
         customerName: row.customer_name,
+        deliveryAddress: row.delivery_address,
         total: parseFloat(row.total),
         status: row.status,
         paymentMethod: row.payment_method,
@@ -71,7 +73,8 @@ async function handleGet(req, res) {
                 uniqueProducts.push({
                   id: parsed.id,
                   name: parsed.name,
-                  price: parseFloat(parsed.price)
+                  price: parseFloat(parsed.price),
+                  quantity: parsed.quantity
                 });
                 seenIds.add(parsed.id);
               }
@@ -79,7 +82,8 @@ async function handleGet(req, res) {
               uniqueProducts.push({
                 id: product.id,
                 name: product.name,
-                price: parseFloat(product.price)
+                price: parseFloat(product.price),
+                quantity: product.quantity
               });
               seenIds.add(product.id);
             }
@@ -105,7 +109,7 @@ async function handleGet(req, res) {
 }
 
 async function handlePost(req, res) {
-  const { customerName, products, total, status, paymentMethod } = req.body;
+  const { customerName, deliveryAddress, products, total, status, paymentMethod } = req.body;
 
   if (!customerName || !products || !Array.isArray(products) || products.length === 0 || total === undefined) {
     return res.status(400).json({ error: 'Customer name, products, and total are required' });
@@ -114,17 +118,18 @@ async function handlePost(req, res) {
   try {
     // Insert the order
     const orderResult = await client.execute({
-      sql: 'INSERT INTO orders (customer_name, total, status, payment_method) VALUES (?, ?, ?, ?)',
-      args: [customerName, parseFloat(total), status || 'open', paymentMethod || 'julespay']
+      sql: 'INSERT INTO orders (customer_name, delivery_address, total, status, payment_method) VALUES (?, ?, ?, ?, ?)',
+      args: [customerName, deliveryAddress, parseFloat(total), status || 'open', paymentMethod || 'julespay']
     });
 
     const orderId = orderResult.lastInsertRowid;
 
     // Insert order items
     for (const product of products) {
+      const quantity = product.quantity || 1; // Default to 1 if no quantity specified
       await client.execute({
         sql: 'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
-        args: [orderId, product.id, 1, product.price]
+        args: [orderId, product.id, quantity, product.price]
       });
     }
 
@@ -137,6 +142,7 @@ async function handlePost(req, res) {
     res.status(201).json({
       id: newOrder.rows[0].id,
       customerName: newOrder.rows[0].customer_name,
+      deliveryAddress: newOrder.rows[0].delivery_address,
       total: parseFloat(newOrder.rows[0].total),
       status: newOrder.rows[0].status,
       paymentMethod: newOrder.rows[0].payment_method,

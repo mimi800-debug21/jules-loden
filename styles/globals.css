@@ -344,6 +344,26 @@ nav {
   cursor: pointer;
 }
 
+.product-quantity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quantity {
+  min-width: 24px;
+  text-align: center;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.product-quantity .btn {
+  padding: 4px 10px;
+  min-width: 30px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
 .no-products {
   padding: 12px;
   color: var(--muted);
