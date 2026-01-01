@@ -356,10 +356,15 @@ export default function AdminPage() {
                           <ul>
                             {order.products && order.products.map(product => (
                               <li key={product.id}>
-                                {product.name}{product.price ? ` (${product.price.toFixed(2)} €)` : ''}
+                                {product.quantity || 1}x {product.name}{product.price ? ` (${product.price.toFixed(2)} €)` : ''}
                               </li>
                             ))}
                           </ul>
+                          {order.deliveryAddress && (
+                            <div className="delivery-address">
+                              <strong>Lieferadresse:</strong> {order.deliveryAddress}
+                            </div>
+                          )}
                         </div>
 
                         <div className="order-actions">

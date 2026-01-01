@@ -344,6 +344,26 @@ nav {
   cursor: pointer;
 }
 
+.product-quantity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quantity {
+  min-width: 24px;
+  text-align: center;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.product-quantity .btn {
+  padding: 4px 10px;
+  min-width: 30px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
 .no-products {
   padding: 12px;
   color: var(--muted);
@@ -817,6 +837,14 @@ button:hover {
 
 .order-products li {
   margin-bottom: 4px;
+}
+
+.delivery-address {
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--panel-2);
+  border-left: 3px solid var(--accent);
+  font-size: 14px;
 }
 
 .order-actions {
