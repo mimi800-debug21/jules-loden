@@ -491,6 +491,19 @@ export default function ClientPage() {
           <h2>Bestellung erfolgreich aufgegeben!</h2>
           <p>Ihre Bestellung wurde erfolgreich übermittelt.</p>
           <p>Jules Pay Zahlung bestätigt</p>
+
+          {/* Advertisement for bringlymit.de - shown after successful purchase */}
+          <div className="advertisement">
+            <div className="ad-content">
+              <h3>Perfekt für Ihre nächste Party! 🎉</h3>
+              <p>Die einfache Mitbring-Liste für Ihre nächste Veranstaltung:</p>
+              <a href="https://bringlymit.de" target="_blank" rel="noopener noreferrer" className="ad-link">
+                <strong>bringlymit.de</strong>
+              </a>
+              <p className="ad-description">Keine Anmeldung. Einfach Link teilen. Alle tragen ein, was sie mitbringen.</p>
+            </div>
+          </div>
+
           <button onClick={() => setShowSuccess(false)} className="btn">Weiter einkaufen</button>
         </div>
       )}

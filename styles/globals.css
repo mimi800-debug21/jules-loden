@@ -656,6 +656,59 @@ button:hover {
   margin-top: 25px;
 }
 
+/* Advertisement Styles */
+.advertisement {
+  margin: 20px 0;
+  padding: 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1e3a8a, #0f172a);
+  border: 1px solid var(--accent);
+  text-align: center;
+  animation: fadeInScale 0.5s ease;
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.ad-content h3 {
+  margin: 0 0 10px 0;
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.ad-content p {
+  margin: 8px 0;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.ad-link {
+  display: inline-block;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 16px;
+  margin: 8px 0;
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  transition: var(--transition);
+}
+
+.ad-link:hover {
+  background: rgba(34, 211, 238, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(34, 211, 238, 0.2);
+}
+
+.ad-description {
+  font-style: italic;
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
+}
+
 .total {
   margin-top: 10px;
   font-weight: bold;
