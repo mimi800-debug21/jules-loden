@@ -20,6 +20,7 @@ export default function Home() {
         </div>
         <nav>
           <Link href="/client" className="btn">Bestellen</Link>
+          <Link href="/waiter" className="btn">Bedienung</Link>
         </nav>
       </header>
 

@@ -285,6 +285,7 @@ export default function AdminPage() {
         <nav>
           <Link href="/admin" className="btn active">Admin</Link>
           <Link href="/client" className="btn">Bestellen</Link>
+          <Link href="/waiter" className="btn">Bedienung</Link>
         </nav>
       </header>
 
@@ -336,6 +337,7 @@ export default function AdminPage() {
                         <div className="order-header">
                           <div className="order-info">
                             <strong>{order.customerName}</strong>
+                            {order.waiterName && <div className="order-meta" style={{ color: 'var(--accent)', marginTop: 4 }}>Bedienung {order.waiterName} hat das in Auftrag gegeben</div>}
                             <div className="order-meta">
                               Bestellt am {new Date(order.createdAt).toLocaleString('de-DE')}
                             </div>

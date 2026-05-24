@@ -232,6 +232,7 @@ export default function ClientPage() {
         </div>
         <nav>
           <Link href="/client" className="btn active">Bestellen</Link>
+          <Link href="/waiter" className="btn">Bedienung</Link>
           <Link href="/" className="btn">Home</Link>
         </nav>
       </header>

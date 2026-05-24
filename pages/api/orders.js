@@ -51,6 +51,7 @@ async function handleGet(req, res) {
       const order = {
         id: row.id,
         customerName: row.customer_name,
+        waiterName: row.waiter_name,
         deliveryAddress: row.delivery_address,
         total: parseFloat(row.total),
         status: row.status,
@@ -109,7 +110,7 @@ async function handleGet(req, res) {
 }
 
 async function handlePost(req, res) {
-  const { customerName, deliveryAddress, products, total, status, paymentMethod } = req.body;
+  const { customerName, waiterName, deliveryAddress, products, total, status, paymentMethod } = req.body;
 
   if (!customerName || !products || !Array.isArray(products) || products.length === 0 || total === undefined) {
     return res.status(400).json({ error: 'Customer name, products, and total are required' });
@@ -118,8 +119,8 @@ async function handlePost(req, res) {
   try {
     // Insert the order
     const orderResult = await client.execute({
-      sql: 'INSERT INTO orders (customer_name, delivery_address, total, status, payment_method) VALUES (?, ?, ?, ?, ?)',
-      args: [customerName, deliveryAddress, parseFloat(total), status || 'open', paymentMethod || 'julespay']
+      sql: 'INSERT INTO orders (customer_name, waiter_name, delivery_address, total, status, payment_method) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [customerName, waiterName || null, deliveryAddress, parseFloat(total), status || 'open', paymentMethod || 'julespay']
     });
 
     const orderId = orderResult.lastInsertRowid;
@@ -142,6 +143,7 @@ async function handlePost(req, res) {
     res.status(201).json({
       id: newOrder.rows[0].id,
       customerName: newOrder.rows[0].customer_name,
+      waiterName: newOrder.rows[0].waiter_name,
       deliveryAddress: newOrder.rows[0].delivery_address,
       total: parseFloat(newOrder.rows[0].total),
       status: newOrder.rows[0].status,
@@ -190,6 +192,7 @@ async function handlePut(req, res) {
     res.status(200).json({
       id: updatedOrder.rows[0].id,
       customerName: updatedOrder.rows[0].customer_name,
+      waiterName: updatedOrder.rows[0].waiter_name,
       total: parseFloat(updatedOrder.rows[0].total),
       status: updatedOrder.rows[0].status,
       paymentMethod: updatedOrder.rows[0].payment_method,
