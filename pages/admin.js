@@ -94,11 +94,12 @@ export default function AdminPage() {
         setEditingProduct(null);
         loadProductsOrdersAndCategories();
       } else {
-        alert('Fehler beim Speichern des Produkts');
+        const errorData = await response.json().catch(() => ({}));
+        alert(`Fehler beim Speichern des Produkts: ${errorData.error || response.statusText}`);
       }
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Fehler beim Speichern des Produkts');
+      alert('Fehler beim Speichern des Produkts: ' + (error.message || 'Verbindung fehlgeschlagen'));
     }
   };
 
