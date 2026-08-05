@@ -515,16 +515,8 @@ export default function WaiterPage() {
         <div className="topbar-inner" style={{ paddingLeft: 0, paddingRight: 0 }}>
           <Link href="/" className="brand">
             <span className="brand-badge"><WaveIcon /></span>
-            <span>
-              <span className="brand-subtitle">Bedienungsbereich</span>
-              <span className="brand-title">Restaurant am See</span>
-            </span>
+            <span className="brand-title">Restaurant am See</span>
           </Link>
-          <nav className="nav">
-            <Link href="/client" className="btn btn-ghost btn-sm">Gast bestellt selbst</Link>
-            <Link href="/waiter" className="btn btn-brand btn-sm">Bedienung</Link>
-            <Link href="/" className="btn btn-ghost btn-sm">Home</Link>
-          </nav>
         </div>
       </header>
 

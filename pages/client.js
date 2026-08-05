@@ -340,16 +340,8 @@ export default function ClientPage() {
         <div className="topbar-inner" style={{ paddingLeft: 0, paddingRight: 0 }}>
           <Link href="/" className="brand">
             <span className="brand-badge"><WaveIcon /></span>
-            <span>
-              <span className="brand-subtitle">Bestellsystem</span>
-              <span className="brand-title">Restaurant am See</span>
-            </span>
+            <span className="brand-title">Restaurant am See</span>
           </Link>
-          <nav className="nav">
-            <Link href="/client" className="btn btn-brand btn-sm">Bestellen</Link>
-            <Link href="/waiter" className="btn btn-ghost btn-sm">Bedienung</Link>
-            <Link href="/" className="btn btn-ghost btn-sm">Home</Link>
-          </nav>
         </div>
       </header>
 
