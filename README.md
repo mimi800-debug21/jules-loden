@@ -1,6 +1,6 @@
-# Jules Loden
+# Restaurant am See
 
-A modern e-commerce ordering system built with Next.js and Turso SQLite.
+A modern ordering system built with Next.js and Turso SQLite.
 
 ## Features
 

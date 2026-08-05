@@ -1,41 +1,27 @@
 import Head from 'next/head';
-import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { WaveIcon } from '../components/Icons';
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const t = setTimeout(() => router.replace('/client'), 900);
+    return () => clearTimeout(t);
+  }, [router]);
+
   return (
-    <div className="container">
+    <div className="splash">
       <Head>
-        <title>Jules Loden</title>
-        <meta name="description" content="Jules Loden Bestellsystem" />
-        <link rel="icon" href="/favicon.ico" />
+        <title>Restaurant am See — Bestellsystem</title>
+        <meta name="description" content="Restaurant am See — Ihr Bestellsystem" />
       </Head>
-
-      <header>
-        <div className="brand">
-          <div className="brand-badge"></div>
-          <div>
-            <div className="brand-subtitle">Online Bestellsystem</div>
-            <div className="brand-title">Jules Loden</div>
-          </div>
-        </div>
-        <nav>
-          <Link href="/client" className="btn">Bestellen</Link>
-          <Link href="/waiter" className="btn">Bedienung</Link>
-        </nav>
-      </header>
-
-      <main>
-        <h1>Willkommen bei Jules Loden</h1>
-        <p>Das neue Bestellsystem für Jules Loden</p>
-
-        <div className="actions">
-          <Link href="/client" className="btn primary">Zum Bestellbereich</Link>
-        </div>
-      </main>
-
-      <footer className="footer">
-        © 2025 Jules Loden • Bestellsystem • Sichere Zahlung • Made with ❤️
-      </footer>
+      <div className="splash-badge">
+        <WaveIcon size={40} />
+      </div>
+      <h1 className="splash-title">Restaurant am See</h1>
+      <p className="splash-sub">Ihre Bestellung beginnt gleich…</p>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-# Jules Loden Database Schema
+# Restaurant am See Database Schema
 
 The application uses a Turso SQLite database with the following tables:
 

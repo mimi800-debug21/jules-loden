@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { WaveIcon } from '../components/Icons';
 
 export default function AdminPage() {
   const [products, setProducts] = useState([]);
@@ -270,16 +271,16 @@ export default function AdminPage() {
   return (
     <div className="container">
       <Head>
-        <title>Admin - Jules Loden</title>
-        <meta name="description" content="Admin-Bereich für Jules Loden" />
+        <title>Admin - Restaurant am See</title>
+        <meta name="description" content="Admin-Bereich für Restaurant am See" />
       </Head>
 
       <header>
         <div className="brand">
-          <div className="brand-badge"></div>
+          <div className="brand-badge"><WaveIcon /></div>
           <div>
             <div className="brand-subtitle">Admin-Bereich</div>
-            <div className="brand-title">Jules Loden</div>
+            <div className="brand-title">Restaurant am See</div>
           </div>
         </div>
         <nav>
@@ -317,7 +318,7 @@ export default function AdminPage() {
                 </div>
 
                 <div className="stats-card">
-                  <h3>Jules Pay Zahlungsstatistik</h3>
+                  <h3>Zahlungsstatistik</h3>
                   <div className="stats-values">
                     <div className="stat-item">
                       <span className="stat-label">Gesamtzahlungen:</span>
@@ -349,7 +350,7 @@ export default function AdminPage() {
                               return <span className={`badge ${statusClass}`}>{statusText}</span>;
                             })()}
                             <span className="badge">
-                              {order.paymentMethod === 'julespay' ? 'Jules Pay' : (order.paymentMethod || 'Nicht angegeben')}
+                              {order.paymentMethod === 'julespay' ? 'Online-Zahlung' : (order.paymentMethod || 'Nicht angegeben')}
                             </span>
                           </div>
                         </div>
@@ -588,7 +589,7 @@ export default function AdminPage() {
       </main>
 
       <footer className="footer">
-        © 2025 Jules Loden • Bestellsystem • Sichere Zahlung • Made with ❤️
+        © 2026 Restaurant am See • Bestellsystem • Sichere Zahlung
       </footer>
     </div>
   );

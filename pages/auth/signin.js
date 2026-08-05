@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { WaveIcon } from '../../components/Icons';
 
 export default function SignIn() {
   const [username, setUsername] = useState('');
@@ -22,16 +23,16 @@ export default function SignIn() {
   return (
     <div className="container">
       <Head>
-        <title>Admin Login - Jules Loden</title>
-        <meta name="description" content="Admin login for Jules Loden" />
+        <title>Admin Login - Restaurant am See</title>
+        <meta name="description" content="Admin login for Restaurant am See" />
       </Head>
 
       <header>
         <div className="brand">
-          <div className="brand-badge"></div>
+          <div className="brand-badge"><WaveIcon /></div>
           <div>
             <div className="brand-subtitle">Admin-Bereich</div>
-            <div className="brand-title">Jules Loden</div>
+            <div className="brand-title">Restaurant am See</div>
           </div>
         </div>
         <nav>
@@ -81,7 +82,7 @@ export default function SignIn() {
       </main>
 
       <footer className="footer">
-        © 2025 Jules Loden • Bestellsystem • Sichere Zahlung • Made with ❤️
+        © 2026 Restaurant am See • Bestellsystem • Sichere Zahlung
       </footer>
     </div>
   );
