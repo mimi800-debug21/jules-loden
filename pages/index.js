@@ -7,21 +7,27 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const t = setTimeout(() => router.replace('/client'), 900);
+    const t = setTimeout(() => router.replace('/client'), 1400);
     return () => clearTimeout(t);
   }, [router]);
 
   return (
     <div className="splash">
       <Head>
-        <title>Restaurant am See — Bestellsystem</title>
-        <meta name="description" content="Restaurant am See — Ihr Bestellsystem" />
+        <title>Restaurant am See</title>
+        <meta name="description" content="Restaurant am See am Tegernsee — mittagskarte online." />
       </Head>
-      <div className="splash-badge">
-        <WaveIcon size={40} />
-      </div>
+      <span className="splash-badge" aria-hidden="true">
+        <WaveIcon size={42} />
+      </span>
       <h1 className="splash-title">Restaurant am See</h1>
-      <p className="splash-sub">Ihre Bestellung beginnt gleich…</p>
+      <p className="splash-sub">Am Tegernsee · Küche bis 14:30 Uhr</p>
+      <p className="splash-redirect">
+        Öffnet gleich&nbsp;
+        <a href="#" onClick={(e) => { e.preventDefault(); router.replace('/client'); }}>
+          direkt zur Speisekarte
+        </a>
+      </p>
     </div>
   );
 }

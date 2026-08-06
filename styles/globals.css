@@ -1,46 +1,56 @@
 /* ============================================================
-   Restaurant am See — Senior-first Order System
-   Light, high-contrast design system
+   Restaurant am See
+   Voice: warm, calm, lightly regional. No cheerleading.
+   Surfaces: warm paper-cream, deep water teal, single ember accent.
    ============================================================ */
 
 :root {
-  /* Surfaces */
-  --bg: #f4f5f7;
-  --bg-grad: radial-gradient(1200px 700px at 20% -10%, #eef4f3 0%, #f4f5f7 55%, #eef0f4 100%);
-  --surface: #ffffff;
-  --surface-2: #f1f3f5;
-  --surface-3: #e8ebef;
-  --border: #d9dee5;
-  --border-strong: #b6bec9;
+  /* Surfaces — warm paper, not cold gray */
+  --bg: #f6f2ec;
+  --bg-grad:
+    radial-gradient(1200px 720px at 18% -12%, #eef5f3 0%, #f6f2ec 58%, #f0ece3 100%),
+    radial-gradient(900px 500px at 92% 110%, #ecf1f0 0%, rgba(236,241,240,0) 60%);
+  --surface: #fffdf9;
+  --surface-2: #f4efe6;
+  --surface-3: #e9e2d4;
+  --border: #dcd4c4;
+  --border-strong: #b4a990;
 
-  /* Text */
-  --text: #1b1f27;
-  --text-secondary: #4b5563;
-  --text-muted: #6b7280;
+  /* Text — soft ink */
+  --text: #1a1d22;
+  --text-secondary: #4a4f57;
+  --text-muted: #6b6f76;
 
-  /* Brand & status */
-  --brand: #0f766e;
-  --brand-strong: #115e59;
-  --brand-soft: #ccfbf1;
-  --accent: #16a34a;
-  --accent-strong: #15803d;
-  --accent-soft: #dcfce7;
+  /* Brand — deep water teal (am See), not generic SaaS green */
+  --brand: #0e6b62;
+  --brand-strong: #0b544c;
+  --brand-soft: #d6ece8;
+  --brand-ink: #073a35;
+
+  /* Ember accent — warm single signal color for prices/CTAs */
+  --accent: #c2410c;
+  --accent-strong: #9a3412;
+  --accent-soft: #fbecd9;
+
   --warn: #b45309;
-  --warn-strong: #92400e;
-  --warn-soft: #fef3c7;
-  --danger: #dc2626;
-  --danger-strong: #b91c1c;
-  --danger-soft: #fee2e2;
-  --info-soft: #e0f2fe;
+  --warn-strong: #7c3a06;
+  --warn-soft: #fde9c7;
 
-  /* Misc */
-  --shadow-sm: 0 1px 3px rgba(27, 31, 39, 0.08);
-  --shadow-md: 0 6px 20px rgba(27, 31, 39, 0.1);
-  --shadow-lg: 0 18px 45px rgba(27, 31, 39, 0.18);
-  --radius: 16px;
+  --danger: #b91c1c;
+  --danger-strong: #7f1717;
+  --danger-soft: #fbe1e1;
+
+  --info-soft: #e3eef5;
+
+  /* Misc — softer shadows, slightly larger radii */
+  --shadow-sm: 0 1px 2px rgba(26, 29, 34, 0.06), 0 1px 1px rgba(26, 29, 34, 0.04);
+  --shadow-md: 0 6px 18px rgba(26, 29, 34, 0.08), 0 2px 4px rgba(26, 29, 34, 0.04);
+  --shadow-lg: 0 24px 60px rgba(26, 29, 34, 0.18), 0 8px 18px rgba(26, 29, 34, 0.08);
+  --radius: 18px;
   --radius-sm: 12px;
-  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease: cubic-bezier(0.32, 0, 0.16, 1);
   --font: "Manrope", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Manrope", "Segoe UI", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -199,18 +209,15 @@ img { max-width: 100%; }
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35);
-}
-.btn-primary:hover { background: var(--accent-strong); box-shadow: 0 6px 16px rgba(22, 163, 74, 0.4); }
-
-.btn-brand {
   background: var(--brand);
   color: #fff;
-  box-shadow: 0 2px 6px rgba(15, 118, 110, 0.35);
+  box-shadow: 0 2px 6px rgba(14, 107, 98, 0.28);
 }
-.btn-brand:hover { background: var(--brand-strong); box-shadow: 0 6px 16px rgba(15, 118, 110, 0.4); }
+.btn-primary:hover { background: var(--brand-strong); box-shadow: 0 6px 16px rgba(14, 107, 98, 0.36); }
+
+.btn-brand { /* alias of primary, kept for legacy admin markup */ }
+.btn-brand { background: var(--brand); color: #fff; box-shadow: 0 2px 6px rgba(14, 107, 98, 0.28); }
+.btn-brand:hover { background: var(--brand-strong); box-shadow: 0 6px 16px rgba(14, 107, 98, 0.36); }
 
 .btn-warn { background: var(--warn-soft); border-color: var(--warn); color: var(--warn-strong); }
 .btn-warn:hover { background: #fde68a; }
@@ -641,11 +648,11 @@ img { max-width: 100%; }
 .qty-btn:active:not(:disabled) { transform: scale(0.9); }
 
 .qty-btn.plus {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--brand);
+  border-color: var(--brand);
   color: #fff;
 }
-.qty-btn.plus:hover { background: var(--accent-strong); }
+.qty-btn.plus:hover { background: var(--brand-strong); }
 
 .qty-btn.minus {
   border-color: var(--danger);
@@ -674,7 +681,7 @@ img { max-width: 100%; }
   height: 52px;
   border-radius: 26px;
   border: none;
-  background: var(--accent);
+  background: var(--brand);
   color: #fff;
   font-size: 18px;
   font-weight: 800;
@@ -686,12 +693,12 @@ img { max-width: 100%; }
   transition: all 0.15s var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
-.add-btn:hover { background: var(--accent-strong); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35); transform: translateY(-1px); }
+.add-btn:hover { background: var(--brand-strong); box-shadow: 0 4px 12px rgba(14, 107, 98, 0.30); transform: translateY(-1px); }
 .add-btn:active { transform: scale(0.96); }
 
 .add-btn.added {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
 }
 
 .qty-float {
@@ -1581,57 +1588,6 @@ img { max-width: 100%; }
 .role-card:hover .role-go .arrow { transform: translateX(6px); }
 
 /* ============================================================
-   Splash / entry screen (root path redirects to /client)
-   ============================================================ */
-
-.splash {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  text-align: center;
-  padding: 24px;
-  background: linear-gradient(165deg, #ffffff 0%, #f2f8f6 60%, #eaf2f4 100%);
-}
-
-.splash-badge {
-  width: 88px;
-  height: 88px;
-  border-radius: 26px;
-  background: linear-gradient(135deg, var(--brand), var(--accent-strong));
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 18px 44px rgba(15, 118, 110, 0.35);
-  margin-bottom: 8px;
-  animation: splash-in 0.6s var(--ease);
-}
-
-.splash-badge svg { width: 44px; height: 44px; }
-
-.splash-title {
-  font-size: clamp(34px, 6vw, 52px);
-  font-weight: 800;
-  letter-spacing: -1px;
-  color: var(--text);
-  animation: step-in 0.6s 0.12s var(--ease) both;
-}
-
-.splash-sub {
-  color: var(--text-muted);
-  font-size: 18px;
-  animation: step-in 0.6s 0.24s var(--ease) both;
-}
-
-@keyframes splash-in {
-  from { opacity: 0; transform: translateY(14px) scale(0.92); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* ============================================================
    Footer
    ============================================================ */
 
@@ -1688,6 +1644,253 @@ img { max-width: 100%; }
 }
 
 /* ============================================================
+   Brand lockup — refined wordmark
+   ============================================================ */
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(155deg, var(--brand) 0%, var(--brand-strong) 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(14, 107, 98, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.brand-mark svg { width: 24px; height: 24px; }
+
+.brand-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.brand-name .name {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.brand-name .role {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Topbar — real sticky, no negative-margin hacks */
+.topbar-site {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(255, 253, 249, 0.86);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.topbar-site-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   Error / retry states
+   ============================================================ */
+
+.error-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 22px 22px 20px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  max-width: 480px;
+  margin: 40px auto;
+}
+
+.error-card .err-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--danger-strong);
+  margin-bottom: 6px;
+}
+
+.error-card .err-text {
+  color: var(--text-secondary);
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.error-card .err-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Toast with an inline action (Retry / Undo) */
+.toast-action {
+  margin-left: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s var(--ease);
+}
+.toast-action:hover { background: rgba(255, 255, 255, 0.26); }
+
+/* Explicit empty states */
+.empty-state {
+  text-align: center;
+  padding: 56px 24px 48px;
+  color: var(--text-secondary);
+}
+
+.empty-state .empty-state-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  color: var(--border-strong);
+}
+
+.empty-state .empty-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.empty-state .empty-sub { font-size: 16px; color: var(--text-muted); }
+
+/* ============================================================
+   Refined success screen — calmer, less showy
+   ============================================================ */
+
+.success-overlay { background: var(--bg-grad); }
+
+.success-check { width: 96px; height: 96px; margin-bottom: 18px; }
+
+.success-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+  animation: step-in 0.5s 0.55s var(--ease) both;
+}
+
+.success-sub {
+  font-size: 17px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  animation: step-in 0.5s 0.65s var(--ease) both;
+}
+
+.success-meta-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.success-meta-line strong { color: var(--text-secondary); font-weight: 700; min-width: 100px; }
+
+/* ============================================================
+   Splash / entry — eliminate the gate, render immediately
+   ============================================================ */
+
+.splash {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 24px;
+  background: var(--bg-grad);
+}
+
+.splash-badge {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: linear-gradient(155deg, var(--brand), var(--brand-strong));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 18px 44px rgba(14, 107, 98, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  margin-bottom: 6px;
+  animation: splash-in 0.5s var(--ease);
+}
+.splash-badge svg { width: 42px; height: 42px; }
+
+.splash-title {
+  font-size: clamp(30px, 5.5vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--text);
+  animation: step-in 0.5s 0.08s var(--ease) both;
+}
+
+.splash-sub {
+  color: var(--text-muted);
+  font-size: 17px;
+  animation: step-in 0.5s 0.16s var(--ease) both;
+}
+
+.splash-redirect {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.splash-redirect a {
+  color: var(--brand-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+.splash-redirect a:hover { text-decoration: underline; }
+
+/* ============================================================
+   Skeleton — honor real shapes
+   ============================================================ */
+
+.skeleton { background: linear-gradient(100deg, var(--surface-2) 40%, color-mix(in srgb, var(--surface-3) 70%, #fff) 50%, var(--surface-2) 60%); }
+
+.skeleton-tile { height: 124px; }
+
+/* ============================================================
    Reduced motion — always respect accessibility
    ============================================================ */
 
@@ -1698,11 +1901,9 @@ img { max-width: 100%; }
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  /* Confetti is pure decoration: hide it entirely under reduced motion. */
+  .confetti-piece { display: none !important; }
 }
-
-/* ============================================================
-   Legacy admin compatibility (admin page not redesigned yet)
-   ============================================================ */
 
 .page-title {
   font-size: 32px;

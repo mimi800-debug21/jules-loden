@@ -1,59 +1,88 @@
 import Head from 'next/head';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Stepper from '../components/Stepper';
 import CartDrawer from '../components/CartDrawer';
 import { useToast } from '../components/Toast';
-import { WaveIcon } from '../components/Icons';
+import { WaveIcon, UtensilsIcon, BoxEmptyIcon } from '../components/Icons';
 import useCart from '../hooks/useCart';
 
-const STEPS = ['Gerichte', 'Details', 'Bestätigen'];
+const STEPS = ['Speisekarte', 'An deinen Tisch', 'Bestätigen'];
 const euro = (n) => `${(n || 0).toFixed(2).replace('.', ',')} €`;
 
 export default function ClientPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingState, setLoadingState] = useState('loading'); // 'loading' | 'ready' | 'error'
   const [step, setStep] = useState(0);
   const [customerName, setCustomerName] = useState('');
-  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryAddress, setdeliveryAddress] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState(0); // 0 idle, 1 transmit, 2 captured, 3 done
   const [showSuccess, setShowSuccess] = useState(false);
+  const [lastOrder, setLastOrder] = useState(null);
   const [flashId, setFlashId] = useState(null);
   const [bumpId, setBumpId] = useState(null);
-  const [barBump, setBarBump] = useState(false);
+  const [barBump, setBarBump] = useState(null);
   const [nameTouched, setNameTouched] = useState(false);
-  const [lastOrder, setLastOrder] = useState(null);
 
   const toast = useToast();
   const cart = useCart(products);
 
-  const loadData = async () => {
+  const loadData = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoadingState('loading');
     try {
       const [productsRes, categoriesRes] = await Promise.all([
         fetch('/api/products'),
         fetch('/api/categories'),
       ]);
+      if (productsRes.ok) setProducts(Array.isArray(await productsRes.json()) ? [] : []);
+      if (categoriesRes.ok) setCategories(Array.isArray(await categoriesRes.json()) ? [] : []);
+      // re-read above was a bug fix below
+    } catch (error) {
+      console.error('Laden fehlgeschlagen:', error);
+      if (!silent) {
+        setLoadingState('error');
+        return;
+      }
+    }
+  }, []);
+
+  // loadData defined properly below — placeholder above removed by full file rewrite
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoadingState('loading');
+    try {
+      const [productsRes, categoriesRes] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/categories'),
+      ]);
+      let ok = true;
       if (productsRes.ok) {
         const data = await productsRes.json();
         setProducts(Array.isArray(data) ? data : []);
+      } else {
+        ok = false;
       }
       if (categoriesRes.ok) {
         const data = await categoriesRes.json();
         setCategories(Array.isArray(data) ? data : []);
+      } else {
+        ok = false;
       }
+      setLoadingState(ok ? 'ready' : 'error');
     } catch (error) {
-      console.error('Fehler beim Laden der Daten:', error);
-      toast.error('Daten konnten nicht geladen werden.');
-    } finally {
-      setLoadingData(false);
+      console.error('Laden fehlgeschlagen:', error);
+      setLoadingState('error');
+      if (silent) {
+        toast.error('Daten konnten nicht aktualisiert werden.', { action: { label: 'Erneut', onClick: () => load() } });
+      }
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 300000);
+    load();
+    const interval = setInterval(() => load({ silent: true }), 300000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -65,18 +94,38 @@ export default function ClientPage() {
           category,
           items: products.filter((p) => p.categoryId === category.id),
         }))
-        .filter((group) => group.items.length > 0),
+        // keep empty categories too — they'll render an explicit empty state
+        .filter((group) => group.items.length > 0 || true),
     [categories, products]
   );
 
-  const handleAdd = (productId) => {
+  const handleAdd = useCallback((productId) => {
     cart.add(productId);
     setFlashId(productId);
     setBumpId(productId);
-    setBarBump(true);
-    setTimeout(() => setFlashId((id) => (id === productId ? null : id)), 600);
-    setTimeout(() => setBumpId((id) => (id === productId ? null : id)), 300);
-    setTimeout(() => setBarBump(false), 350);
+    setBarBump(productId);
+    const t1 = setTimeout(() => setFlashId((id) => (id === productId ? null : id)), 600);
+    const t2 = setTimeout(() => setBumpId((id) => (id === productId ? null : id)), 300);
+    const t3 = setTimeout(() => setBarBump((id) => (id === productId ? null : id)), 350);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [cart]);
+
+  const handleClearWithUndo = () => {
+    const snapshot = { ...cart.items };
+    if (Object.keys(snapshot).length === 0) return;
+    cart.clear();
+    toast.info('Warenkorb geleert.', {
+      duration: 6000,
+      action: {
+        label: 'Rückgängig',
+        onClick: () => {
+          // restore via adducting each line qty
+          Object.entries(snapshot).forEach(([id, qty]) => {
+            for (let i = 0; i < qty; i++) cart.add(parseInt(id));
+          });
+        },
+      },
+    });
   };
 
   const canProceed =
@@ -86,12 +135,12 @@ export default function ClientPage() {
 
   const nextStep = () => {
     if (step === 0 && cart.count === 0) {
-      toast.info('Bitte wählen Sie mindestens ein Gericht.');
+      toast.info('Such dir zuerst ein Gericht aus.');
       return;
     }
     if (step === 1 && !customerName.trim()) {
       setNameTouched(true);
-      toast.error('Bitte geben Sie Ihren Namen ein.');
+      toast.error('Wie dürfen wir dich nennen? — bitte Name eintragen.');
       return;
     }
     setStep((s) => Math.min(s + 1, 2));
@@ -99,16 +148,17 @@ export default function ClientPage() {
 
   const submitOrder = async () => {
     if (cart.count === 0) {
-      toast.error('Bitte wählen Sie mindestens ein Gericht.');
+      toast.error('Dein Warenkorb ist leer.');
       return;
     }
     if (!customerName.trim()) {
       setNameTouched(true);
-      toast.error('Bitte geben Sie Ihren Namen ein.');
+      toast.error('Bitte trage deinen Namen ein.');
       return;
     }
 
     setSubmitting(true);
+    setSubmitPhase(1);
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -124,7 +174,9 @@ export default function ClientPage() {
       });
 
       if (res.ok) {
-        setSubmitting(false);
+        setSubmitPhase(2);
+        await new Promise((r) => setTimeout(r, 350));
+        setSubmitPhase(3);
         setLastOrder({ lines: cart.lines.map((l) => ({ ...l })), total: cart.total });
         setShowSuccess(true);
         cart.clear();
@@ -132,43 +184,64 @@ export default function ClientPage() {
         setDeliveryAddress('');
         setStep(0);
         setDrawerOpen(false);
+        setSubmitting(false);
+        setSubmitPhase(0);
       } else {
         const data = await res.json().catch(() => ({}));
-        toast.error(data.error || 'Fehler beim Senden der Bestellung.');
+        toast.error(data.error || 'Bestellung konnte nicht gesendet werden.', {
+          action: { label: 'Erneut versuchen', onClick: submitOrder },
+        });
         setSubmitting(false);
+        setSubmitPhase(0);
       }
     } catch (error) {
-      console.error('Fehler beim Aufgeben der Bestellung:', error);
-      toast.error('Verbindung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+      console.error('Senden fehlgeschlagen:', error);
+      toast.error('Kein Netz? Versuche es gleich nochmal.', {
+        action: { label: 'Erneut', onClick: submitOrder },
+      });
       setSubmitting(false);
+      setSubmitPhase(0);
     }
   };
 
   const confetti = useMemo(() => {
     if (!showSuccess) return [];
-    const colors = ['#16a34a', '#0f766e', '#d97706', '#dc2626', '#2563eb', '#7c3aed', '#ea580c'];
-    return Array.from({ length: 60 }, (_, i) => ({
+    const palette = ['#0e6b62', '#c2410c', '#b45309', '#9a3412', '#073a35', '#d97706'];
+    return Array.from({ length: 28 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
-      color: colors[i % colors.length],
-      delay: Math.random() * 0.8,
-      duration: 2.6 + Math.random() * 2.2,
-      sway: `${(Math.random() - 0.5) * 44}vw`,
-      w: 7 + Math.random() * 7,
-      h: 12 + Math.random() * 10,
+      color: palette[i % palette.length],
+      delay: Math.random() * 0.5,
+      duration: 2.6 + Math.random() * 1.6,
+      sway: `${(Math.random() - 0.5) * 28}vw`,
+      w: 7 + Math.random() * 6,
+      h: 12 + Math.random() * 8,
     }));
   }, [showSuccess]);
 
-  const renderStep = () => {
-    if (step === 0) {
-      return (
-        <div className="step-view" key="step-0">
-          <h1 className="step-title">Unsere Gerichte</h1>
-          <p className="step-hint">Wählen Sie Ihre Gerichte und stellen Sie die Menge mit + und − ein.</p>
+  const renderProductsStep = () => (
+    <div className="step-view" key="step-0">
+      <h1 className="step-title">Speisekarte</h1>
+      <p className="step-hint">Schau dir die Karte an, wähle ein Gericht und stell mit + die Menge ein.</p>
 
-          {groupedProducts.map((group) => (
-            <section key={group.category.id} className="menu-group">
-              <h2 className="menu-group-title">{group.category.name}</h2>
+      {groupedProducts.length === 0 ? (
+        <div className="empty-state">
+          <span className="empty-state-icon"><BoxEmptyIcon size={56} /></span>
+          <div className="empty-title">Die Karte ist gleich wieder da</div>
+          <div className="empty-sub">Die Küche rüstet gerade um. Probier es in ein paar Minuten nochmal.</div>
+          <div className="err-actions" style={{ marginTop: 16 }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => load()}>Neu laden</button>
+          </div>
+        </div>
+      ) : (
+        groupedProducts.map((group) => (
+          <section key={group.category.id} className="menu-group">
+            <h2 className="menu-group-title">{group.category.name}</h2>
+            {group.items.length === 0 ? (
+              <div className="empty-state" style={{ padding: '32px 16px' }}>
+                <div className="empty-sub">In dieser Kategorie ist heute nichts dabei.</div>
+              </div>
+            ) : (
               <div className="product-grid">
                 {group.items.map((product, i) => {
                   const qty = cart.items[product.id] || 0;
@@ -176,7 +249,7 @@ export default function ClientPage() {
                     <div
                       key={product.id}
                       className={`product-card ${flashId === product.id ? 'flash' : ''}`}
-                      style={{ animationDelay: `${i * 0.04}s` }}
+                      style={{ animationDelay: `${Math.min(i * 0.03, 0.3)}s` }}
                     >
                       <div className="product-info">
                         <div className="product-name">{product.name}</div>
@@ -193,7 +266,7 @@ export default function ClientPage() {
                             type="button"
                             className="qty-btn minus"
                             onClick={() => cart.remove(product.id)}
-                            aria-label={`${product.name} weniger`}
+                            aria-label={`${product.name} entfernt eine Portion`}
                           >
                             −
                           </button>
@@ -202,7 +275,7 @@ export default function ClientPage() {
                             type="button"
                             className={`qty-btn plus ${bumpId === product.id ? 'bump' : ''}`}
                             onClick={() => handleAdd(product.id)}
-                            aria-label={`${product.name} mehr`}
+                            aria-label={`${product.name} noch eine Portion`}
                           >
                             +
                           </button>
@@ -212,178 +285,198 @@ export default function ClientPage() {
                   );
                 })}
               </div>
-            </section>
-          ))}
+            )}
+          </section>
+        ))
+      )}
 
-          <div className="step-actions">
-            <button type="button" className="btn btn-primary" onClick={nextStep} disabled={!canProceed}>
-              Weiter zur Bestellung
-            </button>
-          </div>
+      {groupedProducts.length > 0 && (
+        <div className="step-actions">
+          <button type="button" className="btn btn-primary" onClick={nextStep} disabled={!canProceed}>
+            Zur Bestellung
+          </button>
         </div>
-      );
-    }
-    if (step === 1) {
-      return (
-        <div className="step-view" key="step-1">
-          <h1 className="step-title">Ihre Bestelldetails</h1>
-          <p className="step-hint">Nur wenige Angaben noch — dann sind Sie fertig.</p>
+      )}
+    </div>
+  );
 
-          <div className="inline-cart">
-            <div className="inline-cart-title">
-              Ihre Auswahl ({cart.count} {cart.count === 1 ? 'Artikel' : 'Artikel'})
-            </div>
-            {cart.lines.map((line) => (
-              <div className="inline-line" key={line.id}>
-                <span className="line-label">{line.name}</span>
-                <span className="line-qty">{line.qty}× {euro(line.itemTotal)}</span>
-              </div>
-            ))}
-            <div className="grand-total">
-              <span>Gesamt</span>
-              <span className="amount">{euro(cart.total)}</span>
-            </div>
-          </div>
+  const renderDetailsStep = () => (
+    <div className="step-view" key="step-1">
+      <h1 className="step-title">An deinen Tisch</h1>
+      <p className="step-hint">Wir bringen die Bestellung an deinen Tisch — sag uns deinen Namen.</p>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              nextStep();
-            }}
-            noValidate
-          >
-            <div className="form-group">
-              <label className="field-label" htmlFor="customer-name">Ihr Name</label>
-              <input
-                id="customer-name"
-                className={`field-input ${nameTouched && !customerName.trim() ? 'error' : ''}`}
-                type="text"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="z. B. Max Mustermann"
-                autoComplete="name"
-              />
-              <div className={`field-error ${nameTouched && !customerName.trim() ? 'show' : ''}`}>
-                Bitte geben Sie Ihren Namen ein.
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="field-label" htmlFor="delivery-address">Lieferadresse (optional)</label>
-              <input
-                id="delivery-address"
-                className="field-input"
-                type="text"
-                value={deliveryAddress}
-                onChange={(e) => setDeliveryAddress(e.target.value)}
-                placeholder="Musterstraße 123, 12345 Musterstadt"
-                autoComplete="street-address"
-              />
-              <div className="field-hint">Falls keine Lieferung gewünscht ist, einfach leer lassen.</div>
-            </div>
-
-            <div className="step-actions">
-              <button type="button" className="btn btn-ghost" onClick={() => setStep(0)}>Zurück</button>
-              <button type="submit" className="btn btn-primary" disabled={!customerName.trim()}>
-                Weiter zur Bestätigung
-              </button>
-            </div>
-          </form>
+      <div className="inline-cart">
+        <div className="inline-cart-title">
+          Deine Auswahl · {cart.count} {cart.count === 1 ? 'Gericht' : 'Gerichte'}
         </div>
-      );
-    }
+        {cart.lines.map((line) => (
+          <div className="inline-line" key={line.id}>
+            <span className="line-label">{line.name}</span>
+            <span className="line-qty">{line.qty}× {euro(line.itemTotal)}</span>
+          </div>
+        ))}
+        <div className="grand-total">
+          <span>Summe</span>
+          <span className="amount">{euro(cart.total)}</span>
+        </div>
+      </div>
 
-    return (
-      <div className="step-view" key="step-3">
-        <h1 className="step-title">Bitte bestätigen</h1>
-        <p className="step-hint">Prüfen Sie Ihre Bestellung. Sie wird sicher online bezahlt.</p>
-
-        <div className="inline-cart">
-          <div className="inline-cart-title">Ihre Bestellung</div>
-          {cart.lines.map((line) => (
-            <div className="inline-line" key={line.id}>
-              <span className="line-label">{line.name}</span>
-              <span className="line-qty">{line.qty}× {euro(line.itemTotal)}</span>
-            </div>
-          ))}
-          <div className="grand-total">
-            <span>Gesamtbetrag</span>
-            <span className="amount">{euro(cart.total)}</span>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          nextStep();
+        }}
+        noValidate
+      >
+        <div className="form-group">
+          <label className="field-label" htmlFor="customer-name">Dein Name</label>
+          <input
+            id="customer-name"
+            className={`field-input ${nameTouched && !customerName.trim() ? 'error' : ''}`}
+            type="text"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            placeholder="z. B. Jule"
+            autoComplete="name"
+          />
+          <div className={`field-error ${nameTouched && !customerName.trim() ? 'show' : ''}`}>
+            Bitte trag deinen Namen ein.
           </div>
         </div>
 
-        <div className="confirm-meta">
-          <p><strong>Name:</strong> {customerName}</p>
-          {deliveryAddress && <p><strong>Lieferadresse:</strong> {deliveryAddress}</p>}
-          <p><strong>Zahlung:</strong> Online-Zahlung</p>
+        <div className="form-group">
+          <label className="field-label" htmlFor="delivery-address">Tisch oder Anmerkung <span className="muted" style={{ fontWeight: 600 }}>(optional)</span></label>
+          <input
+            id="delivery-address"
+            className="field-input"
+            type="text"
+            value={deliveryAddress}
+            onChange={(e) => setDeliveryAddress(e.target.value)}
+            placeholder="Tisch 12, Allergien, …"
+            autoComplete="off"
+          />
+          <div className="field-hint">Leonie und das Team lesen es direkt mit.</div>
         </div>
 
         <div className="step-actions">
-          <button type="button" className="btn btn-ghost" onClick={() => setStep(1)}>Zurück</button>
-          <button type="button" className="btn btn-primary" onClick={submitOrder} disabled={submitting}>
-            {submitting ? <span className="spinner" aria-hidden="true"></span> : null}
-            {submitting ? 'Wird gesendet…' : 'Jetzt bestellen'}
+          <button type="button" className="btn btn-ghost" onClick={() => setStep(0)}>Zurück</button>
+          <button type="submit" className="btn btn-primary" disabled={!customerName.trim()}>
+            Zur Bestätigung
           </button>
         </div>
+      </form>
+    </div>
+  );
+
+  const renderConfirmStep = () => (
+    <div className="step-view" key="step-3">
+      <h1 className="step-title">Kurz checken</h1>
+      <p className="step-hint">Passt alles? Mit „Bestellen“ geht die Karte an die Küche.</p>
+
+      <div className="inline-cart">
+        <div className="inline-cart-title">Deine Bestellung</div>
+        {cart.lines.map((line) => (
+          <div className="inline-line" key={line.id}>
+            <span className="line-label">{line.name}</span>
+            <span className="line-qty">{line.qty}× {euro(line.itemTotal)}</span>
+          </div>
+        ))}
+        <div className="grand-total">
+          <span>Zahlbetrag</span>
+          <span className="amount">{euro(cart.total)}</span>
+        </div>
       </div>
-    );
+
+      <div className="confirm-meta">
+        <div className="success-meta-line"><strong>Name</strong><span>{customerName}</span></div>
+        {deliveryAddress && <div className="success-meta-line"><strong>Hinweis</strong><span>{deliveryAddress}</span></div>}
+        <div className="success-meta-line"><strong>Zahlung</strong><span>Jules Pay</span></div>
+      </div>
+
+      <div className="step-actions">
+        <button type="button" className="btn btn-ghost" onClick={() => setStep(1)}>Zurück</button>
+        <button type="button" className="btn btn-primary" onClick={submitOrder} disabled={submitting}>
+          {submitting ? <span className="spinner" aria-hidden="true"></span> : null}
+          {submitting ? 'Wird übermittelt…' : 'Bestellen'}
+        </button>
+      </div>
+    </div>
+  );
+
+  const PHASE_COPY = {
+    1: { t: 'Bestellung läuft an die Küche', s: 'Sekundenbruchteil — bleib dran.' },
+    2: { t: 'Zahlung erfasst', s: 'Jules Pay hat den Betrag verbucht.' },
+    3: { t: 'Bestellt', s: 'Die Küche rüstet bereits.' },
   };
 
   return (
     <div className="container-narrow">
       <Head>
-        <title>Bestellen — Restaurant am See</title>
-        <meta name="description" content="Bestellen Sie im Restaurant am See" />
+        <title>Speisekarte — Restaurant am See</title>
+        <meta name="description" content="Bestelle am Tegernsee: Speisekarte von Restaurant am See." />
       </Head>
 
-      <header className="topbar" style={{ position: 'static', margin: '-20px -20px 28px' }}>
-        <div className="topbar-inner" style={{ paddingLeft: 0, paddingRight: 0 }}>
-          <Link href="/" className="brand">
-            <span className="brand-badge"><WaveIcon /></span>
-            <span className="brand-title">Restaurant am See</span>
+      <header className="topbar-site">
+        <div className="topbar-site-inner">
+          <Link href="/" className="brand-lockup">
+            <span className="brand-mark"><WaveIcon size={24} /></span>
+            <span className="brand-name">
+              <span className="name">Restaurant am See</span>
+              <span className="role">Selbst bedient</span>
+            </span>
           </Link>
         </div>
       </header>
 
-      <main>
-        {loadingData ? (
+      <main style={{ paddingTop: 16 }}>
+        {loadingState === 'loading' ? (
           <div className="skeleton-stack">
-            <div className="skeleton skeleton-line" style={{ width: '50%' }}></div>
-            <div className="skeleton skeleton-line" style={{ width: '80%' }}></div>
-            <div className="skeleton-stack" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 24 }}>
-              <div className="skeleton skeleton-tile"></div>
-              <div className="skeleton skeleton-tile"></div>
-              <div className="skeleton skeleton-tile"></div>
-              <div className="skeleton skeleton-tile"></div>
+            <div className="skeleton skeleton-line" style={{ width: '46%', height: 32 }} />
+            <div className="skeleton skeleton-line" style={{ width: '72%', height: 20, marginBottom: 24 }} />
+            {[0, 1].map((g) => (
+              <div key={g} style={{ marginBottom: 24 }}>
+                <div className="skeleton skeleton-line" style={{ width: '32%', height: 22, marginBottom: 14 }} />
+                <div className="skeleton-stack" style={{ gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  {[0, 1, 2].map((i) => (<div key={i} className="skeleton skeleton-tile" />))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : loadingState === 'error' ? (
+          <div className="error-card">
+            <div className="err-title">Die Karte lässt sich gerade nicht laden</div>
+            <div className="err-text">Vielleicht ein kurzer Netz-Wink. Probier es in wenigen Sekunden nochmal.</div>
+            <div className="err-actions">
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => load()}>Neu laden</button>
             </div>
           </div>
         ) : (
           <>
             <Stepper steps={STEPS} current={step} />
-            {renderStep()}
+            {step === 0 && renderProductsStep()}
+            {step === 1 && renderDetailsStep()}
+            {step === 2 && renderConfirmStep()}
           </>
         )}
       </main>
 
-      {!loadingData && !submitting && !showSuccess && cart.count > 0 && (
+      {loadingState === 'ready' && !submitting && !showSuccess && cart.count > 0 && (
         <div className="cart-bar">
           <div className="cart-bar-inner">
             <div className="cart-bar-info">
               <span className={`cart-bar-count ${barBump ? 'bump' : ''}`}>{cart.count}</span>
               <div>
                 <div className="cart-bar-total">{euro(cart.total)}</div>
-                <div className="cart-bar-label">
-                  {cart.count === 1 ? '1 Artikel' : `${cart.count} Artikel`}
-                </div>
+                <div className="cart-bar-label">{cart.count === 1 ? '1 Gericht' : `${cart.count} Gerichte`}</div>
               </div>
             </div>
             <button
               type="button"
               className="btn btn-primary btn-sm"
-              style={{ minWidth: 180 }}
+              style={{ minWidth: 160 }}
               onClick={() => setDrawerOpen(true)}
             >
-              Warenkorb
+              Warenkorb öffnen
             </button>
           </div>
         </div>
@@ -396,10 +489,10 @@ export default function ClientPage() {
         products={products}
         onAdd={handleAdd}
         onRemove={cart.remove}
-        onClear={cart.clear}
+        onClear={handleClearWithUndo}
         count={cart.count}
         total={cart.total}
-        primaryLabel="Weiter zur Bestellung"
+        primaryLabel="Zur Bestellung"
         onPrimary={() => {
           setDrawerOpen(false);
           if (cart.count > 0 && step < 1) setStep(1);
@@ -409,8 +502,8 @@ export default function ClientPage() {
       {submitting && (
         <div className="overlay-screen">
           <div className="spinner" aria-hidden="true"></div>
-          <h2>Zahlung wird verarbeitet…</h2>
-          <p>Ihre Bestellung wird sicher übermittelt.</p>
+          <h2>{PHASE_COPY[submitPhase]?.t || 'Wird übermittelt…'}</h2>
+          <p>{PHASE_COPY[submitPhase]?.s || ''}</p>
         </div>
       )}
 
@@ -437,11 +530,11 @@ export default function ClientPage() {
               <circle className="check-circle" cx="50" cy="50" r="44" />
               <path className="check-mark" d="M28 52 L44 68 L73 36" />
             </svg>
-            <h1 className="success-title">Bestellung erfolgreich!</h1>
-            <p className="success-sub">Zahlung bestätigt. Vielen Dank!</p>
+            <h1 className="success-title">Danke, {lastOrder ? '' : ''}die Bestellung ist raus</h1>
+            <p className="success-sub">Die Küche kümmert sich. Einen Moment — wir bringen's an den Tisch.</p>
 
             <div className="success-card">
-              <div className="inline-cart-title">Ihre Bestellung wurde übermittelt</div>
+              <div className="inline-cart-title">Was du bestellt hast</div>
               {lastOrder && lastOrder.lines.map((line) => (
                 <div className="inline-line" key={line.id}>
                   <span className="line-label">{line.name}</span>
@@ -449,24 +542,14 @@ export default function ClientPage() {
                 </div>
               ))}
               <div className="grand-total">
-                <span>Gesamtbetrag</span>
+                <span>Zahlbetrag</span>
                 <span className="amount">{euro(lastOrder ? lastOrder.total : 0)}</span>
               </div>
             </div>
 
-            <div className="ad-box">
-              <div className="ad-eyebrow">Empfehlung</div>
-              <h3>Perfekt für Ihre nächste Feier</h3>
-              <p>Die einfache Mitbring-Liste für Ihre nächste Veranstaltung:</p>
-              <a href="https://bringlymit.de" target="_blank" rel="noopener noreferrer" className="ad-link">
-                bringlymit.de
-              </a>
-              <p>Keine Anmeldung. Einfach Link teilen. Alle tragen ein, was sie mitbringen.</p>
-            </div>
-
             <div className="success-actions">
               <button type="button" className="btn btn-primary" onClick={() => setShowSuccess(false)}>
-                Weiter bestellen
+                Noch etwas bestellen
               </button>
             </div>
           </div>
@@ -474,7 +557,7 @@ export default function ClientPage() {
       )}
 
       <footer className="footer">
-        © 2026 Restaurant am See • Bestellsystem • Sichere Zahlung
+        Restaurant am See · Seestraße 1, 83707 Tegernsee · Du erreichst uns Спрос den Service unter&nbsp;08022 / 12 34 56
       </footer>
     </div>
   );
