@@ -1,10 +1,42 @@
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { WaveIcon, LockIcon } from '../components/Icons';
 import { formatSchedule } from '../lib/availability';
 
 const EMPTY_CATEGORY = { name: '', description: '', availableFrom: '', availableUntil: '' };
+
+const playOrderChime = () => {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = window.__orderAudioCtx || new AudioCtx();
+    window.__orderAudioCtx = ctx;
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const now = ctx.currentTime;
+    const notes = [
+      { freq: 880, at: 0, dur: 0.16 },
+      { freq: 1174.66, at: 0.2, dur: 0.2 },
+      { freq: 1567.98, at: 0.42, dur: 0.32 },
+    ];
+
+    notes.forEach((n) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = n.freq;
+      gain.gain.setValueAtTime(0.0001, now + n.at);
+      gain.gain.exponentialRampToValueAtTime(0.9, now + n.at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + n.at + n.dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + n.at);
+      osc.stop(now + n.at + n.dur + 0.05);
+    });
+  } catch (error) {
+    console.error('Bestellton konnte nicht abgespielt werden:', error);
+  }
+};
 
 const toIso = (v) => {
   if (!v) return null;
@@ -28,6 +60,22 @@ export default function AdminPage() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [soundOn, setSoundOn] = useState(true);
+  const prevOrderIdsRef = useRef(null);
+
+  // Unlock the audio context on the first user gesture (browser autoplay policy)
+  useEffect(() => {
+    const unlock = () => {
+      const ctx = window.__orderAudioCtx;
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+    };
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
 
   // Load products, orders and categories from API
   const loadProductsOrdersAndCategories = async () => {
@@ -49,7 +97,18 @@ export default function AdminPage() {
 
       if (ordersRes.ok) {
         const ordersData = await ordersRes.json();
-        setOrders(Array.isArray(ordersData) ? ordersData : []);
+        const ordersList = Array.isArray(ordersData) ? ordersData : [];
+        setOrders(ordersList);
+
+        const ids = new Set(ordersList.map((o) => o.id));
+        const prev = prevOrderIdsRef.current;
+        if (prev) {
+          const newIds = ordersList.filter((o) => !prev.has(o.id));
+          if (newIds.length > 0 && soundOn) {
+            playOrderChime();
+          }
+        }
+        prevOrderIdsRef.current = ids;
       } else {
         console.error('Error fetching orders:', await ordersRes.text());
         setOrders([]);
@@ -368,6 +427,18 @@ export default function AdminPage() {
                 <div className="section-header">
                   <h2>Eingehende Bestellungen</h2>
                   <div className="section-actions">
+                    <button
+                      onClick={() => {
+                        setSoundOn((s) => {
+                          if (!s) playOrderChime();
+                          return !s;
+                        });
+                      }}
+                      className="btn ghost"
+                      title={soundOn ? 'Bestellton aus' : 'Bestellton an'}
+                    >
+                      {soundOn ? '🔔 Ton an' : '🔕 Ton aus'}
+                    </button>
                     <button onClick={clearDoneOrders} className="btn warn">Erledigte entfernen</button>
                   </div>
                 </div>

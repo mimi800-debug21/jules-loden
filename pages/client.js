@@ -17,7 +17,7 @@ export default function ClientPage() {
   const [loadingState, setLoadingState] = useState('loading'); // 'loading' | 'ready' | 'error'
   const [step, setStep] = useState(0);
   const [customerName, setCustomerName] = useState('');
-  const [deliveryAddress, setdeliveryAddress] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitPhase, setSubmitPhase] = useState(0); // 0 idle, 1 transmit, 2 captured, 3 done
@@ -363,7 +363,6 @@ export default function ClientPage() {
             placeholder="Tisch 12, Allergien, …"
             autoComplete="off"
           />
-          <div className="field-hint">Leonie und das Team lesen es direkt mit.</div>
         </div>
 
         <div className="step-actions">
@@ -565,7 +564,7 @@ export default function ClientPage() {
       )}
 
       <footer className="footer">
-        Restaurant am Teich · Seestraße 1, 83707 Tegernsee · Service: 08022 / 12 34 56
+        Restaurant am Teich · Hinten im Garten · Service: schreien sie einfach
       </footer>
     </div>
   );
