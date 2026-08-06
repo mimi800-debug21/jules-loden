@@ -314,25 +314,6 @@ export default function AdminPage() {
     }
   };
 
-  const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      const response = await fetch(`/api/orders/${orderId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      if (response.ok) {
-        loadProductsOrdersAndCategories();
-      } else {
-        alert('Fehler beim Aktualisieren des Status');
-      }
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      alert('Fehler beim Aktualisieren des Status');
-    }
-  };
-
   const deleteOrder = async (orderId) => {
     if (confirm('Sind Sie sicher, dass Sie diese Bestellung löschen möchten?')) {
       try {
@@ -497,24 +478,6 @@ export default function AdminPage() {
                         </div>
 
                         <div className="order-actions">
-                          <button
-                            onClick={() => updateOrderStatus(order.id, 'in_progress')}
-                            className="btn ok"
-                          >
-                            In Arbeit
-                          </button>
-                          <button
-                            onClick={() => updateOrderStatus(order.id, 'done')}
-                            className="btn warn"
-                          >
-                            Abhaken (erledigt)
-                          </button>
-                          <button
-                            onClick={() => updateOrderStatus(order.id, 'open')}
-                            className="btn primary"
-                          >
-                            Zurück auf 'offen'
-                          </button>
                           <button
                             onClick={() => deleteOrder(order.id)}
                             className="btn danger"
