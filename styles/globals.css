@@ -1,5 +1,5 @@
 /* ============================================================
-   Restaurant am See
+   Restaurant am Teich
    Voice: warm, calm, lightly regional. No cheerleading.
    Surfaces: warm paper-cream, deep water teal, single ember accent.
    ============================================================ */
@@ -21,7 +21,7 @@
   --text-secondary: #4a4f57;
   --text-muted: #6b6f76;
 
-  /* Brand — deep water teal (am See), not generic SaaS green */
+  /* Brand — deep water teal, calm regional identity */
   --brand: #0e6b62;
   --brand-strong: #0b544c;
   --brand-soft: #d6ece8;
@@ -557,6 +557,50 @@ img { max-width: 100%; }
   height: 2px;
   border-radius: 2px;
   background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* Category locked until available_at / closed after available_until */
+.menu-group-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  animation: step-in 0.35s var(--ease) both;
+}
+
+.menu-group-locked-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.menu-group-locked .menu-group-title { margin-bottom: 4px; }
+
+.locked-line {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.locked-line strong {
+  color: var(--accent-strong);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
+}
+
+.locked-sub {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 .product-grid {
@@ -1993,6 +2037,30 @@ img { max-width: 100%; }
 .product-item, .category-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .product-info, .category-info { flex: 1; min-width: 0; }
 .product-actions, .category-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+
+.category-reorder {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.reorder-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s var(--ease), border-color 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.reorder-btn:hover:not(:disabled) { border-color: var(--brand); color: var(--brand-strong); background: var(--brand-soft); }
+.reorder-btn:active:not(:disabled) { transform: scale(0.92); }
+.reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .product-header, .category-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }
 .product-header strong, .category-header strong { font-size: 17px; }
 

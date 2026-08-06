@@ -23,8 +23,8 @@ export default function SignIn() {
   return (
     <div className="container">
       <Head>
-        <title>Admin Login - Restaurant am See</title>
-        <meta name="description" content="Admin login for Restaurant am See" />
+        <title>Admin Login - Restaurant am Teich</title>
+        <meta name="description" content="Admin login for Restaurant am Teich" />
       </Head>
 
       <header>
@@ -32,7 +32,7 @@ export default function SignIn() {
           <div className="brand-badge"><WaveIcon /></div>
           <div>
             <div className="brand-subtitle">Admin-Bereich</div>
-            <div className="brand-title">Restaurant am See</div>
+            <div className="brand-title">Restaurant am Teich</div>
           </div>
         </div>
         <nav>
@@ -82,7 +82,7 @@ export default function SignIn() {
       </main>
 
       <footer className="footer">
-        © 2026 Restaurant am See • Bestellsystem • Sichere Zahlung
+        © 2026 Restaurant am Teich • Bestellsystem • Sichere Zahlung
       </footer>
     </div>
   );

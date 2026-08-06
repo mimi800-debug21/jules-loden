@@ -1,5 +1,21 @@
 import { client, initializeDb } from '../../../lib/db';
 
+const toIso = (v) => {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+
+const mapCategory = (row) => ({
+  id: row.id,
+  name: row.name,
+  description: row.description,
+  availableFrom: row.available_from || null,
+  availableUntil: row.available_until || null,
+  sortOrder: row.sort_order ?? 0,
+  createdAt: row.created_at,
+});
+
 export default async function handler(req, res) {
   const { id } = req.query;
 
@@ -40,15 +56,7 @@ async function handleGet(req, res, id) {
       return res.status(404).json({ error: 'Category not found' });
     }
 
-    const row = result.rows[0];
-    const category = {
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      createdAt: row.created_at
-    };
-
-    res.status(200).json(category);
+    res.status(200).json(mapCategory(result.rows[0]));
   } catch (error) {
     console.error('Error fetching category:', error);
     res.status(500).json({ error: 'Failed to fetch category' });
@@ -57,6 +65,9 @@ async function handleGet(req, res, id) {
 
 async function handlePut(req, res, id) {
   const { name, description } = req.body;
+  const availableFrom = toIso(req.body.availableFrom);
+  const availableUntil = toIso(req.body.availableUntil);
+  const sortOrder = parseInt(req.body.sortOrder, 10) || 0;
 
   if (!id) {
     return res.status(400).json({ error: 'Category ID is required' });
@@ -78,8 +89,8 @@ async function handlePut(req, res, id) {
   }
 
     const result = await client.execute({
-      sql: 'UPDATE categories SET name = ?, description = ? WHERE id = ?',
-      args: [name, description || null, parseInt(id)]
+      sql: 'UPDATE categories SET name = ?, description = ?, available_from = ?, available_until = ?, sort_order = ? WHERE id = ?',
+      args: [name, description || null, availableFrom, availableUntil, sortOrder, parseInt(id)]
     });
 
     if (result.rowsAffected === 0) {
@@ -91,12 +102,7 @@ async function handlePut(req, res, id) {
       args: [parseInt(id)]
     });
 
-    res.status(200).json({
-      id: updatedCategory.rows[0].id,
-      name: updatedCategory.rows[0].name,
-      description: updatedCategory.rows[0].description,
-      createdAt: updatedCategory.rows[0].created_at
-    });
+    res.status(200).json(mapCategory(updatedCategory.rows[0]));
   } catch (error) {
     console.error('Error updating category:', error);
     res.status(500).json({ error: error.message || 'Failed to update category' });

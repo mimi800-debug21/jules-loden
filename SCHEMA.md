@@ -1,4 +1,4 @@
-# Restaurant am See Database Schema
+# Restaurant am Teich Database Schema
 
 The application uses a Turso SQLite database with the following tables:
 
@@ -8,9 +8,17 @@ CREATE TABLE categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
+  available_from TEXT,
+  available_until TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
+
+- `available_from` (ISO datetime or `NULL`): the category is locked on the guest menu until this time (live countdown shown).
+- `available_until` (ISO datetime or `NULL`): the category closes again at this time.
+- Both empty → category is always available.
+- `sort_order`: display order on the client/waiter menu (ascending). New categories are appended at the end. Admin can reorder with the ▲/▼ buttons.
 
 ## Products Table
 ```sql

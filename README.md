@@ -1,4 +1,4 @@
-# Restaurant am See
+# Restaurant am Teich
 
 A modern ordering system built with Next.js and Turso SQLite.
 

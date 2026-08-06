@@ -14,13 +14,13 @@ export default function Home() {
   return (
     <div className="splash">
       <Head>
-        <title>Restaurant am See</title>
-        <meta name="description" content="Restaurant am See am Tegernsee — mittagskarte online." />
+        <title>Restaurant am Teich</title>
+        <meta name="description" content="Restaurant am Teich am Tegernsee — mittagskarte online." />
       </Head>
       <span className="splash-badge" aria-hidden="true">
         <WaveIcon size={42} />
       </span>
-      <h1 className="splash-title">Restaurant am See</h1>
+      <h1 className="splash-title">Restaurant am Teich</h1>
       <p className="splash-sub">Am Tegernsee · Küche bis 14:30 Uhr</p>
       <p className="splash-redirect">
         Öffnet gleich&nbsp;

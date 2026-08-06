@@ -4,7 +4,8 @@ import Link from 'next/link';
 import Stepper from '../components/Stepper';
 import CartDrawer from '../components/CartDrawer';
 import { useToast } from '../components/Toast';
-import { WaveIcon, ClipboardIcon, ChefHatIcon, CheckCircleIcon } from '../components/Icons';
+import { WaveIcon, ClipboardIcon, ChefHatIcon, CheckCircleIcon, LockIcon } from '../components/Icons';
+import { getCategoryState, formatCountdown } from '../lib/availability';
 import useCart from '../hooks/useCart';
 
 const STEPS = ['Gerichte', 'Details', 'Bestätigen'];
@@ -27,9 +28,15 @@ export default function WaiterPage() {
   const [nameTouched, setNameTouched] = useState(false);
   const [guestTouched, setGuestTouched] = useState(false);
   const prevOpenCount = useRef(-1);
+  const [now, setNow] = useState(() => Date.now());
 
   const toast = useToast();
   const cart = useCart(products);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const loadProductsAndCategories = async () => {
     try {
@@ -226,54 +233,71 @@ export default function WaiterPage() {
           <h1 className="step-title">Gerichte auswählen</h1>
           <p className="step-hint">Wählen Sie die Gerichte und stellen Sie die Mengen mit + und − ein.</p>
 
-          {groupedProducts.map((group) => (
-            <section key={group.category.id} className="menu-group">
-              <h2 className="menu-group-title">{group.category.name}</h2>
-              <div className="product-grid">
-                {group.items.map((product, i) => {
-                  const qty = cart.items[product.id] || 0;
-                  return (
-                    <div
-                      key={product.id}
-                      className={`product-card ${flashId === product.id ? 'flash' : ''}`}
-                      style={{ animationDelay: `${i * 0.04}s` }}
-                    >
-                      <div className="product-info">
-                        <div className="product-name">{product.name}</div>
-                        {product.description && <div className="product-desc">{product.description}</div>}
-                        <div className="product-price">{euro(product.price)}</div>
-                      </div>
-                      {qty === 0 ? (
-                        <button type="button" className="add-btn" onClick={() => handleAdd(product.id)}>
-                          + Hinzufügen
-                        </button>
+          {groupedProducts.map((group) => {
+            const av = getCategoryState(group.category, now);
+            return (
+              <section key={group.category.id} className="menu-group">
+                {av.state !== 'open' && (
+                  <div className="menu-group-locked" style={{ marginBottom: 14 }}>
+                    <span className="menu-group-locked-icon"><LockIcon size={24} /></span>
+                    <div>
+                      <div className="menu-group-title" style={{ marginBottom: 4 }}>{group.category.name}</div>
+                      {av.state === 'locked' ? (
+                        <div className="locked-line">Öffnet in&nbsp;<strong>{formatCountdown(av.opensAt.getTime() - now)}</strong></div>
                       ) : (
-                        <div className="qty-stepper">
-                          <button
-                            type="button"
-                            className="qty-btn minus"
-                            onClick={() => cart.remove(product.id)}
-                            aria-label={`${product.name} weniger`}
-                          >
-                            −
-                          </button>
-                          <span className="qty-value">{qty}</span>
-                          <button
-                            type="button"
-                            className={`qty-btn plus ${bumpId === product.id ? 'bump' : ''}`}
-                            onClick={() => handleAdd(product.id)}
-                            aria-label={`${product.name} mehr`}
-                          >
-                            +
-                          </button>
-                        </div>
+                        <div className="locked-line">Heute geschlossen.</div>
                       )}
+                      <div className="locked-sub">Bedienung kann trotzdem bestellen.</div>
                     </div>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+                  </div>
+                )}
+                <h2 className="menu-group-title">{group.category.name}</h2>
+                <div className="product-grid">
+                  {group.items.map((product, i) => {
+                    const qty = cart.items[product.id] || 0;
+                    return (
+                      <div
+                        key={product.id}
+                        className={`product-card ${flashId === product.id ? 'flash' : ''}`}
+                        style={{ animationDelay: `${i * 0.04}s` }}
+                      >
+                        <div className="product-info">
+                          <div className="product-name">{product.name}</div>
+                          {product.description && <div className="product-desc">{product.description}</div>}
+                          <div className="product-price">{euro(product.price)}</div>
+                        </div>
+                        {qty === 0 ? (
+                          <button type="button" className="add-btn" onClick={() => handleAdd(product.id)}>
+                            + Hinzufügen
+                          </button>
+                        ) : (
+                          <div className="qty-stepper">
+                            <button
+                              type="button"
+                              className="qty-btn minus"
+                              onClick={() => cart.remove(product.id)}
+                              aria-label={`${product.name} weniger`}
+                            >
+                              −
+                            </button>
+                            <span className="qty-value">{qty}</span>
+                            <button
+                              type="button"
+                              className={`qty-btn plus ${bumpId === product.id ? 'bump' : ''}`}
+                              onClick={() => handleAdd(product.id)}
+                              aria-label={`${product.name} mehr`}
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
 
           <div className="step-actions">
             <button type="button" className="btn btn-primary" onClick={nextStep} disabled={!canProceed}>
@@ -507,15 +531,15 @@ export default function WaiterPage() {
   return (
     <div className="container">
       <Head>
-        <title>Bedienung — Restaurant am See</title>
-        <meta name="description" content="Bedienungsbereich für Restaurant am See" />
+        <title>Bedienung — Restaurant am Teich</title>
+        <meta name="description" content="Bedienungsbereich für Restaurant am Teich" />
       </Head>
 
       <header className="topbar" style={{ position: 'static', margin: '-20px -20px 28px' }}>
         <div className="topbar-inner" style={{ paddingLeft: 0, paddingRight: 0 }}>
           <Link href="/" className="brand">
             <span className="brand-badge"><WaveIcon /></span>
-            <span className="brand-title">Restaurant am See</span>
+            <span className="brand-title">Restaurant am Teich</span>
           </Link>
         </div>
       </header>
@@ -614,7 +638,7 @@ export default function WaiterPage() {
       )}
 
       <footer className="footer">
-        © 2026 Restaurant am See • Bestellsystem • Sichere Zahlung
+        © 2026 Restaurant am Teich • Bestellsystem • Sichere Zahlung
       </footer>
     </div>
   );

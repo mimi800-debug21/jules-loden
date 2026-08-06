@@ -4,7 +4,8 @@ import Link from 'next/link';
 import Stepper from '../components/Stepper';
 import CartDrawer from '../components/CartDrawer';
 import { useToast } from '../components/Toast';
-import { WaveIcon, UtensilsIcon, BoxEmptyIcon } from '../components/Icons';
+import { WaveIcon, BoxEmptyIcon, LockIcon } from '../components/Icons';
+import { getCategoryState, formatCountdown } from '../lib/availability';
 import useCart from '../hooks/useCart';
 
 const STEPS = ['Speisekarte', 'An deinen Tisch', 'Bestätigen'];
@@ -26,30 +27,16 @@ export default function ClientPage() {
   const [bumpId, setBumpId] = useState(null);
   const [barBump, setBarBump] = useState(null);
   const [nameTouched, setNameTouched] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
   const toast = useToast();
   const cart = useCart(products);
 
-  const loadData = useCallback(async ({ silent = false } = {}) => {
-    if (!silent) setLoadingState('loading');
-    try {
-      const [productsRes, categoriesRes] = await Promise.all([
-        fetch('/api/products'),
-        fetch('/api/categories'),
-      ]);
-      if (productsRes.ok) setProducts(Array.isArray(await productsRes.json()) ? [] : []);
-      if (categoriesRes.ok) setCategories(Array.isArray(await categoriesRes.json()) ? [] : []);
-      // re-read above was a bug fix below
-    } catch (error) {
-      console.error('Laden fehlgeschlagen:', error);
-      if (!silent) {
-        setLoadingState('error');
-        return;
-      }
-    }
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
   }, []);
 
-  // loadData defined properly below — placeholder above removed by full file rewrite
   const load = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoadingState('loading');
     try {
@@ -234,37 +221,56 @@ export default function ClientPage() {
           </div>
         </div>
       ) : (
-        groupedProducts.map((group) => (
-          <section key={group.category.id} className="menu-group">
-            <h2 className="menu-group-title">{group.category.name}</h2>
-            {group.items.length === 0 ? (
-              <div className="empty-state" style={{ padding: '32px 16px' }}>
-                <div className="empty-sub">In dieser Kategorie ist heute nichts dabei.</div>
-              </div>
-            ) : (
-              <div className="product-grid">
-                {group.items.map((product, i) => {
-                  const qty = cart.items[product.id] || 0;
-                  return (
-                    <div
-                      key={product.id}
-                      className={`product-card ${flashId === product.id ? 'flash' : ''}`}
-                      style={{ animationDelay: `${Math.min(i * 0.03, 0.3)}s` }}
-                    >
-                      <div className="product-info">
-                        <div className="product-name">{product.name}</div>
-                        {product.description && <div className="product-desc">{product.description}</div>}
-                        <div className="product-price">{euro(product.price)}</div>
+        groupedProducts.map((group) => {
+          const av = getCategoryState(group.category, now);
+          const available = av.state === 'open';
+          return (
+            <section key={group.category.id} className="menu-group">
+              {!available ? (
+                <div className="menu-group-locked">
+                  <span className="menu-group-locked-icon"><LockIcon size={24} /></span>
+                  <div>
+                    <div className="menu-group-title" style={{ marginBottom: 4 }}>{group.category.name}</div>
+                    {av.state === 'locked' ? (
+                      <div className="locked-line">
+                        Öffnet in&nbsp;<strong>{formatCountdown(av.opensAt.getTime() - now)}</strong>
                       </div>
-                      {qty === 0 ? (
-                        <button type="button" className="add-btn" onClick={() => handleAdd(product.id)}>
-                          + Hinzufügen
-                        </button>
-                      ) : (
-                        <div className="qty-stepper">
-                          <button
-                            type="button"
-                            className="qty-btn minus"
+                    ) : (
+                      <div className="locked-line">Heute geschlossen.</div>
+                    )}
+                    <div className="locked-sub">Sobald die Kategorie freigegeben ist, erscheint sie hier.</div>
+                  </div>
+                </div>
+              ) : group.items.length === 0 ? (
+                <div className="empty-state" style={{ padding: '32px 16px' }}>
+                  <div className="empty-sub">In dieser Kategorie ist heute nichts dabei.</div>
+                </div>
+              ) : (
+                <>
+                  <h2 className="menu-group-title">{group.category.name}</h2>
+                  <div className="product-grid">
+                    {group.items.map((product, i) => {
+                      const qty = cart.items[product.id] || 0;
+                      return (
+                        <div
+                          key={product.id}
+                          className={`product-card ${flashId === product.id ? 'flash' : ''}`}
+                          style={{ animationDelay: `${Math.min(i * 0.03, 0.3)}s` }}
+                        >
+                          <div className="product-info">
+                            <div className="product-name">{product.name}</div>
+                            {product.description && <div className="product-desc">{product.description}</div>}
+                            <div className="product-price">{euro(product.price)}</div>
+                          </div>
+                          {qty === 0 ? (
+                            <button type="button" className="add-btn" onClick={() => handleAdd(product.id)}>
+                              + Hinzufügen
+                            </button>
+                          ) : (
+                            <div className="qty-stepper">
+                              <button
+                                type="button"
+                                className="qty-btn minus"
                             onClick={() => cart.remove(product.id)}
                             aria-label={`${product.name} entfernt eine Portion`}
                           >
@@ -285,10 +291,12 @@ export default function ClientPage() {
                   );
                 })}
               </div>
-            )}
+            </>
+          )}
           </section>
-        ))
-      )}
+        );
+      })
+    )}
 
       {groupedProducts.length > 0 && (
         <div className="step-actions">
@@ -412,8 +420,8 @@ export default function ClientPage() {
   return (
     <div className="container-narrow">
       <Head>
-        <title>Speisekarte — Restaurant am See</title>
-        <meta name="description" content="Bestelle am Tegernsee: Speisekarte von Restaurant am See." />
+        <title>Speisekarte — Restaurant am Teich</title>
+        <meta name="description" content="Bestelle am Tegernsee: Speisekarte von Restaurant am Teich." />
       </Head>
 
       <header className="topbar-site">
@@ -421,7 +429,7 @@ export default function ClientPage() {
           <Link href="/" className="brand-lockup">
             <span className="brand-mark"><WaveIcon size={24} /></span>
             <span className="brand-name">
-              <span className="name">Restaurant am See</span>
+              <span className="name">Restaurant am Teich</span>
               <span className="role">Selbst bedient</span>
             </span>
           </Link>
@@ -530,7 +538,7 @@ export default function ClientPage() {
               <circle className="check-circle" cx="50" cy="50" r="44" />
               <path className="check-mark" d="M28 52 L44 68 L73 36" />
             </svg>
-            <h1 className="success-title">Danke, {lastOrder ? '' : ''}die Bestellung ist raus</h1>
+            <h1 className="success-title">Danke, die Bestellung ist raus</h1>
             <p className="success-sub">Die Küche kümmert sich. Einen Moment — wir bringen's an den Tisch.</p>
 
             <div className="success-card">
@@ -557,7 +565,7 @@ export default function ClientPage() {
       )}
 
       <footer className="footer">
-        Restaurant am See · Seestraße 1, 83707 Tegernsee · Du erreichst uns Спрос den Service unter&nbsp;08022 / 12 34 56
+        Restaurant am Teich · Seestraße 1, 83707 Tegernsee · Service: 08022 / 12 34 56
       </footer>
     </div>
   );

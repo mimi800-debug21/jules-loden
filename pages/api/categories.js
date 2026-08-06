@@ -1,5 +1,21 @@
 import { client, initializeDb } from '../../lib/db';
 
+const toIso = (v) => {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+
+const mapCategory = (row) => ({
+  id: row.id,
+  name: row.name,
+  description: row.description,
+  availableFrom: row.available_from || null,
+  availableUntil: row.available_until || null,
+  sortOrder: row.sort_order ?? 0,
+  createdAt: row.created_at,
+});
+
 export default async function handler(req, res) {
   // Initialize database on first request
   if (req.method === 'GET' || req.method === 'POST') {
@@ -29,13 +45,8 @@ async function handleGet(req, res) {
     // Add cache headers for faster performance
     res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=10');
 
-    const result = await client.execute('SELECT * FROM categories ORDER BY created_at DESC');
-    const categories = result.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      createdAt: row.created_at
-    }));
+    const result = await client.execute('SELECT * FROM categories ORDER BY sort_order ASC, id ASC');
+    const categories = result.rows.map(mapCategory);
 
     res.status(200).json(categories);
   } catch (error) {
@@ -46,6 +57,8 @@ async function handleGet(req, res) {
 
 async function handlePost(req, res) {
   const { name, description } = req.body;
+  const availableFrom = toIso(req.body.availableFrom);
+  const availableUntil = toIso(req.body.availableUntil);
 
   if (!name) {
     return res.status(400).json({ error: 'Name is required' });
@@ -53,8 +66,8 @@ async function handlePost(req, res) {
 
   try {
     const result = await client.execute({
-      sql: 'INSERT INTO categories (name, description) VALUES (?, ?)',
-      args: [name, description || null]
+      sql: 'INSERT INTO categories (name, description, available_from, available_until, sort_order) VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM categories))',
+      args: [name, description || null, availableFrom, availableUntil]
     });
 
     const newCategory = await client.execute({
@@ -62,12 +75,7 @@ async function handlePost(req, res) {
       args: [result.lastInsertRowid]
     });
 
-    res.status(201).json({
-      id: newCategory.rows[0].id,
-      name: newCategory.rows[0].name,
-      description: newCategory.rows[0].description,
-      createdAt: newCategory.rows[0].created_at
-    });
+    res.status(201).json(mapCategory(newCategory.rows[0]));
   } catch (error) {
     console.error('Error creating category:', error);
     res.status(500).json({ error: 'Failed to create category' });
@@ -77,6 +85,9 @@ async function handlePost(req, res) {
 async function handlePut(req, res) {
   const { id } = req.query;
   const { name, description } = req.body;
+  const availableFrom = toIso(req.body.availableFrom);
+  const availableUntil = toIso(req.body.availableUntil);
+  const sortOrder = parseInt(req.body.sortOrder, 10) || 0;
 
   if (!id) {
     return res.status(400).json({ error: 'Category ID is required' });
@@ -94,8 +105,8 @@ async function handlePut(req, res) {
     }
 
     const result = await client.execute({
-      sql: 'UPDATE categories SET name = ?, description = ? WHERE id = ?',
-      args: [name, description || null, parseInt(id)]
+      sql: 'UPDATE categories SET name = ?, description = ?, available_from = ?, available_until = ?, sort_order = ? WHERE id = ?',
+      args: [name, description || null, availableFrom, availableUntil, sortOrder, parseInt(id)]
     });
 
     if (result.rowsAffected === 0) {
@@ -107,12 +118,7 @@ async function handlePut(req, res) {
       args: [parseInt(id)]
     });
 
-    res.status(200).json({
-      id: updatedCategory.rows[0].id,
-      name: updatedCategory.rows[0].name,
-      description: updatedCategory.rows[0].description,
-      createdAt: updatedCategory.rows[0].created_at
-    });
+    res.status(200).json(mapCategory(updatedCategory.rows[0]));
   } catch (error) {
     console.error('Error updating category:', error);
     res.status(500).json({ error: error.message || 'Failed to update category' });

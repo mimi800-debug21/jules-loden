@@ -1,14 +1,30 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { WaveIcon } from '../components/Icons';
+import { WaveIcon, LockIcon } from '../components/Icons';
+import { formatSchedule } from '../lib/availability';
+
+const EMPTY_CATEGORY = { name: '', description: '', availableFrom: '', availableUntil: '' };
+
+const toIso = (v) => {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+
+const toLocalInput = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 
 export default function AdminPage() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [categories, setCategories] = useState([]);
   const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '', tags: '', categoryId: '' });
-  const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+  const [newCategory, setNewCategory] = useState(EMPTY_CATEGORY);
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -142,7 +158,10 @@ export default function AdminPage() {
 
     try {
       const categoryData = {
-        ...newCategory
+        name: newCategory.name,
+        description: newCategory.description,
+        availableFrom: toIso(newCategory.availableFrom),
+        availableUntil: toIso(newCategory.availableUntil)
       };
 
       const response = editingCategory
@@ -158,7 +177,7 @@ export default function AdminPage() {
           });
 
       if (response.ok) {
-        setNewCategory({ name: '', description: '' });
+        setNewCategory(EMPTY_CATEGORY);
         setEditingCategory(null);
         loadProductsOrdersAndCategories();
       } else {
@@ -191,14 +210,49 @@ export default function AdminPage() {
   const handleEditCategory = (category) => {
     setNewCategory({
       name: category.name,
-      description: category.description || ''
+      description: category.description || '',
+      availableFrom: toLocalInput(category.availableFrom),
+      availableUntil: toLocalInput(category.availableUntil)
     });
     setEditingCategory(category);
   };
 
   const handleCancelCategoryEdit = () => {
-    setNewCategory({ name: '', description: '' });
+    setNewCategory(EMPTY_CATEGORY);
     setEditingCategory(null);
+  };
+
+  const moveCategory = async (index, direction) => {
+    const next = [...categories];
+    const target = index + direction;
+    if (target < 0 || target >= next.length) return;
+
+    [next[index], next[target]] = [next[target], next[index]];
+
+    try {
+      const updates = next.map((c, i) =>
+        fetch(`/api/categories/${c.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: c.name,
+            description: c.description || '',
+            availableFrom: c.availableFrom,
+            availableUntil: c.availableUntil,
+            sortOrder: i,
+          }),
+        })
+      );
+      const results = await Promise.all(updates);
+      if (results.every((r) => r.ok)) {
+        loadProductsOrdersAndCategories();
+      } else {
+        alert('Fehler beim Speichern der Reihenfolge');
+      }
+    } catch (error) {
+      console.error('Error reordering categories:', error);
+      alert('Fehler beim Speichern der Reihenfolge');
+    }
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
@@ -272,8 +326,8 @@ export default function AdminPage() {
   return (
     <div className="container">
       <Head>
-        <title>Admin - Restaurant am See</title>
-        <meta name="description" content="Admin-Bereich für Restaurant am See" />
+        <title>Admin - Restaurant am Teich</title>
+        <meta name="description" content="Admin-Bereich für Restaurant am Teich" />
       </Head>
 
       <header>
@@ -281,7 +335,7 @@ export default function AdminPage() {
           <div className="brand-badge"><WaveIcon /></div>
           <div>
             <div className="brand-subtitle">Admin-Bereich</div>
-            <div className="brand-title">Restaurant am See</div>
+            <div className="brand-title">Restaurant am Teich</div>
           </div>
         </div>
         <nav>
@@ -548,6 +602,30 @@ export default function AdminPage() {
                       </div>
                     </div>
 
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="category-available-from">Frei ab (optional)</label>
+                        <input
+                          type="datetime-local"
+                          id="category-available-from"
+                          value={newCategory.availableFrom}
+                          onChange={(e) => setNewCategory({...newCategory, availableFrom: e.target.value})}
+                        />
+                        <div className="muted" style={{ marginTop: 4 }}>Kategorie öffnet automatisch um diese Uhrzeit.</div>
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="category-available-until">Frei bis (optional)</label>
+                        <input
+                          type="datetime-local"
+                          id="category-available-until"
+                          value={newCategory.availableUntil}
+                          onChange={(e) => setNewCategory({...newCategory, availableUntil: e.target.value})}
+                        />
+                        <div className="muted" style={{ marginTop: 4 }}>Kategorie schließt automatisch um diese Uhrzeit.</div>
+                      </div>
+                    </div>
+
                     <div className="form-actions">
                       <button type="submit" className="btn primary">
                         {editingCategory ? 'Kategorie aktualisieren' : 'Kategorie hinzufügen'}
@@ -563,14 +641,38 @@ export default function AdminPage() {
                   <h3>Vorhandene Kategorien</h3>
                   <div className="category-list">
                     {categories.length > 0 ? (
-                      categories.map(category => (
+                      categories.map((category, index) => (
                         <div key={category.id} className="category-item">
+                          <div className="category-reorder">
+                            <button
+                              type="button"
+                              className="reorder-btn"
+                              onClick={() => moveCategory(index, -1)}
+                              disabled={index === 0}
+                              aria-label={`${category.name} nach oben`}
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              className="reorder-btn"
+                              onClick={() => moveCategory(index, 1)}
+                              disabled={index === categories.length - 1}
+                              aria-label={`${category.name} nach unten`}
+                            >
+                              ▼
+                            </button>
+                          </div>
                           <div className="category-info">
                             <div className="category-header">
                               <strong>{category.name}</strong>
                             </div>
                             {category.description && <div className="muted">{category.description}</div>}
                             <div className="muted">Erstellt: {new Date(category.createdAt).toLocaleDateString('de-DE')}</div>
+                            <div className="muted" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {(category.availableFrom || category.availableUntil) && <LockIcon size={14} />}
+                              {formatSchedule(category.availableFrom, category.availableUntil)}
+                            </div>
                           </div>
                           <div className="category-actions">
                             <button onClick={() => handleEditCategory(category)} className="btn primary">Bearbeiten</button>
@@ -590,7 +692,7 @@ export default function AdminPage() {
       </main>
 
       <footer className="footer">
-        © 2026 Restaurant am See • Bestellsystem • Sichere Zahlung
+        © 2026 Restaurant am Teich • Bestellsystem • Sichere Zahlung
       </footer>
     </div>
   );

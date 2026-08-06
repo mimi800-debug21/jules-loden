@@ -60,3 +60,28 @@ export const CheckCircleIcon = ({ size = 24 }) => (
     <path d="m8.8 12.3 2.2 2.2 4.2-4.4" />
   </Svg>
 );
+
+export const UtensilsIcon = ({ size = 24 }) => (
+  <Svg size={size}>
+    <path d="M5 3v7a2 2 0 0 0 2 2h1v9" />
+    <path d="M8 3v6" />
+    <path d="M17 3c-1.5 0-3 2-3 5.5S15.5 13 17 13v8" />
+    <path d="M17 3c1.5 0 2 2 2 4.5" />
+  </Svg>
+);
+
+export const BoxEmptyIcon = ({ size = 24 }) => (
+  <Svg size={size}>
+    <path d="M3 7l9-4 9 4v10l-9 4-9-4Z" />
+    <path d="M3 7l9 4 9-4" />
+    <path d="M12 11v10" />
+    <path d="M5 10v3M19 10v3" />
+  </Svg>
+);
+
+export const LockIcon = ({ size = 24 }) => (
+  <Svg size={size}>
+    <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
+    <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+  </Svg>
+);
