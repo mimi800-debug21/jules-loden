@@ -332,23 +332,6 @@ export default function AdminPage() {
     }
   };
 
-  const clearDoneOrders = async () => {
-    if (confirm('Sind Sie sicher, dass Sie alle erledigten Bestellungen löschen möchten?')) {
-      try {
-        const doneOrders = Array.isArray(orders) ? orders.filter(order => order.status === 'done') : [];
-        const deletePromises = doneOrders.map(order =>
-          fetch(`/api/orders/${order.id}`, { method: 'DELETE' })
-        );
-
-        await Promise.all(deletePromises);
-        loadProductsOrdersAndCategories();
-      } catch (error) {
-        console.error('Error clearing done orders:', error);
-        alert('Fehler beim Löschen der erledigten Bestellungen');
-      }
-    }
-  };
-
   const calculatePaymentStats = () => {
     const julesPayOrders = Array.isArray(orders) ? orders.filter(order => order.paymentMethod === 'julespay') : [];
     const totalAmount = julesPayOrders.reduce((sum, order) => {
@@ -360,8 +343,6 @@ export default function AdminPage() {
       totalAmount: totalAmount.toFixed(2)
     };
   };
-
-  const stats = calculatePaymentStats();
 
   return (
     <div className="container">
@@ -420,21 +401,6 @@ export default function AdminPage() {
                     >
                       {soundOn ? '🔔 Ton an' : '🔕 Ton aus'}
                     </button>
-                    <button onClick={clearDoneOrders} className="btn warn">Erledigte entfernen</button>
-                  </div>
-                </div>
-
-                <div className="stats-card">
-                  <h3>Zahlungsstatistik</h3>
-                  <div className="stats-values">
-                    <div className="stat-item">
-                      <span className="stat-label">Gesamtzahlungen:</span>
-                      <span className="stat-value">{stats.totalPayments}</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-label">Gesamtbetrag:</span>
-                      <span className="stat-value">{stats.totalAmount} €</span>
-                    </div>
                   </div>
                 </div>
 
